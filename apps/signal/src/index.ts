@@ -1,0 +1,173 @@
+import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { createServer as createHttpsServer } from "node:https";
+import { networkInterfaces } from "node:os";
+import { Server } from "socket.io";
+import type {
+  ClientToServerEvents,
+  IceServersResponse,
+  JoinRequest,
+  ServerToClientEvents,
+} from "@usap/shared";
+import { config, loadDevCertificate } from "./config.js";
+import { getIceServers, hasTurnConfigured } from "./ice.js";
+import { RoomManager } from "./rooms.js";
+
+/** Per-socket state: which room/participant this socket belongs to. */
+interface SocketData {
+  roomId?: string;
+  clientId?: string;
+}
+
+const log = (...args: unknown[]) => console.log(new Date().toISOString().slice(11, 19), ...args);
+
+const rooms = new RoomManager(config.room);
+
+// ---------- Plain HTTP routes (everything that is not Socket.IO) ----------
+
+function setCors(req: IncomingMessage, res: ServerResponse) {
+  const origin = req.headers.origin;
+  if (origin && (config.corsOrigins.length === 0 || config.corsOrigins.includes(origin))) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+  }
+}
+
+function sendJson(res: ServerResponse, status: number, body: unknown) {
+  res.writeHead(status, { "Content-Type": "application/json" });
+  res.end(JSON.stringify(body));
+}
+
+async function handleHttp(req: IncomingMessage, res: ServerResponse) {
+  setCors(req, res);
+  const path = (req.url ?? "/").split("?")[0];
+
+  if (req.method === "GET" && path === "/health") {
+    return sendJson(res, 200, { ok: true, rooms: rooms.roomCount });
+  }
+  if (req.method === "GET" && path === "/ice-servers") {
+    const body: IceServersResponse = { iceServers: await getIceServers() };
+    return sendJson(res, 200, body);
+  }
+  sendJson(res, 404, { error: "not found" });
+}
+
+const httpServer = config.https
+  ? createHttpsServer(loadDevCertificate(), handleHttp)
+  : createHttpServer(handleHttp);
+
+// ---------- Socket.IO: rooms + WebRTC signaling ----------
+
+const io = new Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>(httpServer, {
+  cors: {
+    origin: config.corsOrigins.length === 0 ? true : config.corsOrigins,
+  },
+  // Detect dead connections (e.g. phone lost Wi-Fi) within ~25s instead of the 45s default.
+  pingInterval: 10_000,
+  pingTimeout: 15_000,
+});
+
+const ROOM_ID = /^[a-z0-9-]{3,64}$/i;
+
+function parseJoin(req: unknown): JoinRequest | null {
+  if (typeof req !== "object" || req === null) return null;
+  const r = req as Partial<JoinRequest>;
+  if (typeof r.roomId !== "string" || !ROOM_ID.test(r.roomId)) return null;
+  if (typeof r.clientId !== "string" || r.clientId.length === 0 || r.clientId.length > 64) return null;
+  const name = typeof r.name === "string" ? r.name.trim().slice(0, 40) : "";
+  return {
+    roomId: r.roomId.toLowerCase(),
+    clientId: r.clientId,
+    name: name || "Guest",
+    media: { audio: r.media?.audio === true, video: r.media?.video === true },
+  };
+}
+
+io.on("connection", (socket) => {
+  /** Leave the current room on purpose (end call / joining another room). */
+  const leaveCurrentRoom = () => {
+    const { roomId, clientId } = socket.data;
+    if (!roomId || !clientId) return;
+    if (rooms.leave(roomId, clientId)) {
+      socket.to(roomId).emit("peer-left", { clientId });
+      log(`[room ${roomId}] ${clientId} left`);
+    }
+    void socket.leave(roomId);
+    socket.data = {};
+  };
+
+  socket.on("join-room", (rawReq, ack) => {
+    if (typeof ack !== "function") return;
+    const req = parseJoin(rawReq);
+    if (!req) return ack({ ok: false, error: "invalid-request" });
+
+    if (socket.data.roomId && socket.data.roomId !== req.roomId) leaveCurrentRoom();
+
+    const result = rooms.join(req.roomId, req, socket.id);
+    if (!result.ok) {
+      log(`[room ${req.roomId}] rejected ${req.clientId}: ${result.error}`);
+      return ack({ ok: false, error: result.error });
+    }
+
+    void socket.join(req.roomId);
+    socket.data = { roomId: req.roomId, clientId: req.clientId };
+
+    for (const ghost of result.evicted) {
+      socket.to(req.roomId).emit("peer-left", { clientId: ghost.clientId });
+    }
+
+    if (result.resumed) {
+      // The old socket may not have noticed it's dead yet; close it so it
+      // can't send stale messages. Its disconnect handler will ignore it.
+      if (result.previousSocketId) io.sockets.sockets.get(result.previousSocketId)?.disconnect(true);
+      socket.to(req.roomId).emit("peer-reconnected", { clientId: req.clientId });
+      log(`[room ${req.roomId}] ${req.clientId} resumed`);
+    } else {
+      socket.to(req.roomId).emit("peer-joined", { clientId: req.clientId, name: req.name, media: req.media });
+      log(`[room ${req.roomId}] ${req.clientId} (${req.name}) joined, ${result.peers.length + 1} in room`);
+    }
+
+    ack({ ok: true, peers: result.peers, resumed: result.resumed });
+  });
+
+  // Relay offer / answer / ICE candidates. The server never reads the payload.
+  socket.on("signal", (msg) => {
+    const { roomId, clientId } = socket.data;
+    if (!roomId || !clientId || typeof msg?.to !== "string") return;
+    const target = rooms.socketIdOf(roomId, msg.to);
+    if (target) io.to(target).emit("signal", { from: clientId, payload: msg.payload });
+  });
+
+  socket.on("media-state", (media) => {
+    const { roomId, clientId } = socket.data;
+    if (!roomId || !clientId) return;
+    const clean = { audio: media?.audio === true, video: media?.video === true };
+    rooms.setMedia(roomId, clientId, clean);
+    socket.to(roomId).emit("media-state", { clientId, media: clean });
+  });
+
+  socket.on("leave-room", leaveCurrentRoom);
+
+  socket.on("disconnect", (reason) => {
+    const { roomId, clientId } = socket.data;
+    if (!roomId || !clientId) return;
+    const marked = rooms.disconnect(roomId, clientId, socket.id, () => {
+      io.to(roomId).emit("peer-left", { clientId });
+      log(`[room ${roomId}] ${clientId} did not come back, removed`);
+    });
+    if (marked) {
+      io.to(roomId).emit("peer-disconnected", { clientId });
+      log(`[room ${roomId}] ${clientId} disconnected (${reason}), holding slot`);
+    }
+  });
+});
+
+httpServer.listen(config.port, "0.0.0.0", () => {
+  const scheme = config.https ? "https" : "http";
+  const lanIps = Object.values(networkInterfaces())
+    .flat()
+    .filter((n) => n && n.family === "IPv4" && !n.internal)
+    .map((n) => n!.address);
+  log(`Signaling server on ${scheme}://localhost:${config.port}`);
+  for (const ip of lanIps) log(`  LAN: ${scheme}://${ip}:${config.port}`);
+  if (!hasTurnConfigured()) log("No TURN configured (STUN only): fine on the same Wi-Fi, may fail across strict networks.");
+});

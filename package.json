@@ -1,0 +1,24 @@
+{
+  "name": "usap",
+  "private": true,
+  "description": "Video calls with live translated subtitles",
+  "workspaces": [
+    "apps/web",
+    "apps/signal",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n signal,web -c blue,green \"npm run dev -w apps/signal\" \"npm run dev -w apps/web\"",
+    "dev:https": "node scripts/gen-cert.mjs && concurrently -n signal,web -c blue,green \"npm run dev:https -w apps/signal\" \"npm run dev:https -w apps/web\"",
+    "build": "npm run build -w apps/signal && npm run build -w apps/web",
+    "typecheck": "npm run typecheck -w apps/signal && npm run typecheck -w apps/web",
+    "lint": "npm run lint -w apps/web"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "selfsigned": "2.4.1"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

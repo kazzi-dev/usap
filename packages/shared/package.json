@@ -1,0 +1,7 @@
+{
+  "name": "@usap/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Types shared by the web client and the signaling server (type-only, no runtime code)",
+  "types": "./protocol.d.ts"
+}
