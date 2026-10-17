@@ -624,7 +624,9 @@ export class CallSession {
     // Always create both channels, even with the camera off, so turning it on
     // later is a simple replaceTrack (no renegotiation).
     for (const kind of ["audio", "video"] as const) {
-      pc.addTransceiver(this.localTrack(kind) ?? kind, { direction: "sendrecv" });
+      // `streams` groups our tracks under one stream id, so the other side
+      // (especially the Flutter app) receives a ready-made stream to display.
+      pc.addTransceiver(this.localTrack(kind) ?? kind, { direction: "sendrecv", streams: [this.localStream] });
     }
     // Adding transceivers fires "negotiationneeded", which sends the offer.
   }
@@ -714,6 +716,8 @@ export class CallSession {
       if (transceiver.direction !== "sendrecv") transceiver.direction = "sendrecv";
       const track = this.localTrack(kind);
       if (transceiver.sender.track !== track) void transceiver.sender.replaceTrack(track);
+      // Same stream grouping on the answering side (not supported in every browser).
+      if ("setStreams" in transceiver.sender) transceiver.sender.setStreams(this.localStream);
     }
   }
 

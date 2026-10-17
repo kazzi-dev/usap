@@ -100,11 +100,19 @@ class CallSession extends ChangeNotifier {
   bool _hasConnectedToPeer = false;
   Timer? _disconnectTimer;
   MediaStream? _remoteStream;
+  /// True when _remoteStream is one we created ourselves (and so must dispose).
+  bool _ownsRemoteStream = false;
 
   /// Signaling messages are handled strictly one after another. WebRTC calls
   /// are async; without this, an ICE candidate could be applied before the
   /// offer it belongs to has finished being applied.
   Future<void> _signalQueue = Future.value();
+
+  /// flutter_webrtc reports the signaling state as null until the first change,
+  /// but a new connection is "stable". Treating null as "not stable" made the
+  /// app think every incoming offer collided with its own and ignore it.
+  static RTCSignalingState _stateOf(RTCPeerConnection pc) =>
+      pc.signalingState ?? RTCSignalingState.RTCSignalingStateStable;
 
   SpeechCapture? _capture;
   int _segmentSeq = 0;
@@ -209,9 +217,12 @@ class CallSession extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
-    _teardown();
-    localRenderer.dispose();
-    remoteRenderer.dispose();
+    // Free the video views only after the call is fully shut down; the
+    // teardown still touches them (it clears what they show).
+    _teardown().whenComplete(() {
+      localRenderer.dispose();
+      remoteRenderer.dispose();
+    });
     super.dispose();
   }
 
@@ -379,7 +390,10 @@ class CallSession extends ChangeNotifier {
 
     socket.on('signal', (data) {
       final map = data as Map;
-      _signalQueue = _signalQueue.then((_) => _handleSignal(map['from'] as String, map['payload'] as Map));
+      // catchError keeps the queue alive: one failed message must not block all later ones.
+      _signalQueue = _signalQueue
+          .then((_) => _handleSignal(map['from'] as String, map['payload'] as Map))
+          .catchError((Object e) => debugPrint('[webrtc] signal handling crashed: $e'));
     });
 
     socket.on('subtitle', (data) => _addSubtitle(Subtitle.fromJson(data as Map)));
@@ -522,14 +536,25 @@ class CallSession extends ChangeNotifier {
     };
 
     pc.onTrack = (event) async {
-      if (_pc != pc) return;
-      // The browser doesn't attach its tracks to a named stream, so collect
-      // them into our own stream for the video view.
-      var stream = event.streams.isNotEmpty ? event.streams.first : _remoteStream;
-      stream ??= await createLocalMediaStream('remote-$connectionId');
-      if (event.streams.isEmpty) await stream.addTrack(event.track);
-      _remoteStream = stream;
-      remoteRenderer.srcObject = stream;
+      // Audio plays by itself; only the video track needs to go to the view.
+      if (_pc != pc || event.track.kind != 'video') return;
+      if (event.streams.isNotEmpty) {
+        // Normal case: the sender grouped its tracks into a stream.
+        _remoteStream = event.streams.first;
+        _ownsRemoteStream = false;
+      } else {
+        // Older senders send a "loose" track: wrap it in a stream of our own.
+        final stream = await createLocalMediaStream('remote-$connectionId');
+        await stream.addTrack(event.track);
+        if (_pc != pc) {
+          await stream.dispose();
+          return;
+        }
+        _remoteStream = stream;
+        _ownsRemoteStream = true;
+      }
+      remoteRenderer.srcObject = _remoteStream;
+      debugPrint('[webrtc] showing remote video');
       _notify();
     };
 
@@ -546,7 +571,7 @@ class CallSession extends ChangeNotifier {
     if (connectionId != _connectionId) {
       if (description?['type'] != 'offer') return; // leftover from an old connection
       final pc = _pc;
-      if (pc != null && pc.signalingState == RTCSignalingState.RTCSignalingStateHaveLocalOffer && !_polite) {
+      if (pc != null && _stateOf(pc) == RTCSignalingState.RTCSignalingStateHaveLocalOffer && !_polite) {
         return; // both started at once; ours wins
       }
       // The other side started a new connection: follow it.
@@ -560,7 +585,7 @@ class CallSession extends ChangeNotifier {
       if (description != null) {
         final type = description['type'] as String;
         final collision = type == 'offer' &&
-            (_makingOffer || pc.signalingState != RTCSignalingState.RTCSignalingStateStable);
+            (_makingOffer || _stateOf(pc) != RTCSignalingState.RTCSignalingStateStable);
         _ignoreOffer = !_polite && collision;
         if (_ignoreOffer) return;
         if (collision) {
@@ -568,6 +593,7 @@ class CallSession extends ChangeNotifier {
           await pc.setLocalDescription(RTCSessionDescription('', 'rollback'));
         }
         await pc.setRemoteDescription(RTCSessionDescription(description['sdp'] as String?, type));
+        debugPrint('[webrtc] applied remote $type');
         if (type == 'offer') {
           await _attachLocalTracks(pc);
           final answer = await pc.createAnswer();
@@ -604,6 +630,7 @@ class CallSession extends ChangeNotifier {
 
   void _onConnectionState(RTCPeerConnection pc, RTCPeerConnectionState state) {
     if (pc != _pc) return;
+    debugPrint('[webrtc] connection state: ${state.name}');
     _disconnectTimer?.cancel();
     switch (state) {
       case RTCPeerConnectionState.RTCPeerConnectionStateConnected:
@@ -638,11 +665,11 @@ class CallSession extends ChangeNotifier {
   void _recoverIfNeeded() {
     final pc = _pc;
     if (pc == null || pc.connectionState == RTCPeerConnectionState.RTCPeerConnectionStateConnected) return;
-    if (pc.signalingState == RTCSignalingState.RTCSignalingStateHaveLocalOffer) {
+    if (_stateOf(pc) == RTCSignalingState.RTCSignalingStateHaveLocalOffer) {
       pc.getLocalDescription().then((d) {
         if (d != null) _sendSignal({'description': {'type': d.type, 'sdp': d.sdp}});
       });
-    } else if (pc.signalingState == RTCSignalingState.RTCSignalingStateStable) {
+    } else if (_stateOf(pc) == RTCSignalingState.RTCSignalingStateStable) {
       _restartIce();
     }
   }
@@ -660,8 +687,10 @@ class CallSession extends ChangeNotifier {
       await pc.close();
     }
     remoteRenderer.srcObject = null;
-    await _remoteStream?.dispose();
+    // Streams that belong to the peer connection are cleaned up with it.
+    if (_ownsRemoteStream) await _remoteStream?.dispose();
     _remoteStream = null;
+    _ownsRemoteStream = false;
   }
 
   void _updateStatus() {
