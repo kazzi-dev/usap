@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
   distDir: process.env.USAP_NEXT_DIST_DIR || ".next",
   cacheComponents: true,
   partialPrefetching: true,
-  allowedDevOrigins: lanIps,
+  allowedDevOrigins: ["127.0.0.1", ...lanIps],
   turbopack: {
     rules: {
       "*.css": {

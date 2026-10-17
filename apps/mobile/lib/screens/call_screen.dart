@@ -92,6 +92,14 @@ class _CallScreenState extends State<CallScreen> {
                     Text(widget.roomId, style: const TextStyle(fontFamily: 'monospace', color: Colors.white70)),
                     Text('${_statusLabel(s.status)} · Subtitles: ${_captionLabel(s)}',
                         style: const TextStyle(fontSize: 12, color: Colors.white54)),
+                    if (s.recording)
+                      const Row(
+                        children: [
+                          Icon(Icons.fiber_manual_record, size: 10, color: Colors.redAccent),
+                          SizedBox(width: 4),
+                          Text('Transcript saved', style: TextStyle(fontSize: 12, color: Color(0xFFFCA5A5))),
+                        ],
+                      ),
                   ],
                 ),
               ),

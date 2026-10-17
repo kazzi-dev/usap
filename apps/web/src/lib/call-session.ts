@@ -1,6 +1,16 @@
-import type { LanguageCode, MediaState, PeerInfo, SignalPayload, Subtitle, SubtitleErrorReason } from "@usap/shared";
+import type {
+  LanguageCode,
+  MediaState,
+  PeerInfo,
+  RecordingState,
+  SignalPayload,
+  SocketAuth,
+  Subtitle,
+  SubtitleErrorReason,
+} from "@usap/shared";
 import { io } from "socket.io-client";
 import { randomId } from "./ids";
+import { getSession } from "./session";
 import { fetchIceServers, getSignalUrl, type SignalSocket } from "./signal";
 import { createFakeMicTrack, getFakeMicUrl } from "./subtitles/fake-mic";
 import { SpeechCapture } from "./subtitles/speech-capture";
@@ -74,6 +84,8 @@ export interface CallState {
   localSpeaking: boolean;
   /** The language I speak and read subtitles in. */
   language: LanguageCode;
+  /** Whether this call's transcript is being saved (someone in it is logged in). */
+  recording: RecordingState;
 }
 
 type Kind = "audio" | "video";
@@ -138,6 +150,7 @@ export class CallSession {
     captions: { enabled: true, status: "off" },
     localSpeaking: false,
     language: "en",
+    recording: { recording: false, callId: null },
   };
   private readonly listeners = new Set<() => void>();
 
@@ -393,7 +406,10 @@ export class CallSession {
 
   private connectSignal(url: string) {
     // Socket.IO reconnects automatically with backoff when the connection drops.
-    const socket: SignalSocket = io(url, { reconnectionDelayMax: 5_000 });
+    // Logged in? Send the session token so the call can be saved to history.
+    const token = getSession()?.token;
+    const auth: SocketAuth = token ? { token } : {};
+    const socket: SignalSocket = io(url, { reconnectionDelayMax: 5_000, auth });
     this.socket = socket;
 
     socket.on("connect", () => {
@@ -448,6 +464,11 @@ export class CallSession {
     socket.on("signal", ({ from, payload }) => void this.handleSignal(from, payload));
 
     socket.on("subtitle", (subtitle) => this.addSubtitle(subtitle));
+
+    socket.on("call-recording", (recording) => {
+      // Keep the call id after recording ends, for the "view transcript" link.
+      this.set({ recording: { recording: recording.recording, callId: recording.callId ?? this.state.recording.callId } });
+    });
 
     socket.on("subtitle-error", ({ reason }) => {
       const now = Date.now();

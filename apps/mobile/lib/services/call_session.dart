@@ -84,6 +84,10 @@ class CallSession extends ChangeNotifier {
   bool get localSpeaking => _localSpeaking;
   bool _localSpeaking = false;
 
+  /// True while this call's transcript is being saved (someone in it is logged in).
+  bool get recording => _recording;
+  bool _recording = false;
+
   // ---------- Internals ----------
 
   io.Socket? _socket;
@@ -397,6 +401,10 @@ class CallSession extends ChangeNotifier {
     });
 
     socket.on('subtitle', (data) => _addSubtitle(Subtitle.fromJson(data as Map)));
+    socket.on('call-recording', (data) {
+      _recording = (data as Map)['recording'] == true;
+      _notify();
+    });
     socket.on('subtitle-error', (data) {
       final now = DateTime.now();
       if (now.difference(_lastSubtitleError).inSeconds < 15) return;

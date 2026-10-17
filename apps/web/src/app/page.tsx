@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { AccountBar } from "@/components/AccountBar";
 import { createRoomId, parseRoomInput } from "@/lib/ids";
 
 export default function Home() {
@@ -22,7 +23,10 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center bg-neutral-950 px-4 text-white">
+    <main className="relative flex min-h-dvh flex-col items-center justify-center bg-neutral-950 px-4 text-white">
+      <div className="absolute right-4 top-4">
+        <AccountBar />
+      </div>
       <div className="w-full max-w-md">
         <h1 className="text-4xl font-bold tracking-tight">Usap</h1>
         <p className="mt-2 text-neutral-400">

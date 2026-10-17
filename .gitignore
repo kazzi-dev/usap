@@ -31,3 +31,6 @@ apps/web/public/vad/
 # downloaded / converted AI models (npm run setup:models)
 apps/ai/models/
 .next-test/
+
+# local PGlite database (used when DATABASE_URL is not set)
+apps/signal/.data/

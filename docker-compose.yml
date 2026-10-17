@@ -1,0 +1,23 @@
+# Local services. Start with: npm run db:up   (or: docker compose up -d)
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      # Values come from .env (same folder); the defaults are for local dev only.
+      POSTGRES_USER: ${POSTGRES_USER:-usap}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-usap-dev-password}
+      POSTGRES_DB: ${POSTGRES_DB:-usap}
+    # Only reachable from this computer, not from the rest of the network.
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:

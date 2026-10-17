@@ -10,6 +10,7 @@ import { SubtitleOverlay } from "@/components/SubtitleOverlay";
 import { VideoTile } from "@/components/VideoTile";
 import { CallSession, type CallState } from "@/lib/call-session";
 import { loadDisplayName, loadLanguage, saveDisplayName, saveLanguage } from "@/lib/preferences";
+import { useSession } from "@/lib/session";
 import { useCallState } from "@/lib/use-call-session";
 
 const noopSubscribe = () => () => {};
@@ -113,6 +114,8 @@ function PreJoin(props: {
 }
 
 function CallOver({ state, onRejoin }: { state: CallState; onRejoin: () => void }) {
+  const session = useSession();
+  const savedCallId = state.status === "ended" ? state.recording.callId : null;
   const title =
     state.status === "room-full"
       ? "This call is full"
@@ -131,6 +134,20 @@ function CallOver({ state, onRejoin }: { state: CallState; onRejoin: () => void 
       <div className="max-w-md">
         <h1 className="text-2xl font-semibold">{title}</h1>
         {detail && <p className="mt-2 text-neutral-400">{detail}</p>}
+        {savedCallId && (
+          <p className="mt-2 text-neutral-400">
+            {session ? (
+              <>
+                The transcript was saved.{" "}
+                <Link href={`/history/${savedCallId}`} className="text-sky-400 hover:underline">
+                  View transcript and summary
+                </Link>
+              </>
+            ) : (
+              "The transcript was saved to the other person's account."
+            )}
+          </p>
+        )}
         <div className="mt-6 flex justify-center gap-3">
           <button type="button" onClick={onRejoin} className="rounded-lg bg-sky-600 px-4 py-2 font-medium hover:bg-sky-500">
             {state.status === "ended" ? "Rejoin" : "Try again"}
@@ -185,6 +202,11 @@ function InCall({ roomId, name, state, session }: { roomId: string; name: string
           <div className="flex items-center gap-3">
             <StatusPill status={state.status} />
             <span className="mt-0.5 text-xs text-neutral-400">
+              {state.recording.recording && (
+                <span className="flex items-center gap-1 text-red-300" title="This call's transcript is being saved to a logged-in participant's history">
+                  <span className="size-2 rounded-full bg-red-500" /> Transcript saved
+                </span>
+              )}
               Subtitles:{" "}
               {state.captions.status === "on"
                 ? state.localSpeaking

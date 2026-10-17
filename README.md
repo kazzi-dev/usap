@@ -8,9 +8,9 @@ the other person's screen in their language.
 Built entirely on free tools: WebRTC, Socket.IO, Groq's free tier, and local
 open-source models.
 
-> **Status: Stage 4 of 6.** 1-on-1 video calls with live translated
-> subtitles, in the browser and in an Android app. Transcripts and summaries
-> come next.
+> **Status: Stage 5 of 6.** 1-on-1 video calls with live translated
+> subtitles in the browser and an Android app, accounts, saved transcripts and
+> AI summaries. Stage 6 adds polish, more tests and deployment.
 
 | Stage | What | Status |
 | ----- | ---- | ------ |
@@ -18,7 +18,7 @@ open-source models.
 | 2 | Live same-language subtitles (VAD, Groq Whisper, rate limiter, local fallback) | ✅ |
 | 3 | Translation (NLLB-200) with per-user language | ✅ |
 | 4 | Flutter app joining the same calls | ✅ |
-| 5 | Postgres transcripts, AI summary, call history, auth | ⏳ |
+| 5 | Postgres transcripts, AI summary, call history, auth | ✅ |
 | 6 | Tests, error states, deployment guide | ⏳ |
 
 ## Architecture
@@ -34,6 +34,8 @@ flowchart LR
     G[(Groq Whisper<br/>free tier)]
     L[(faster-whisper<br/>local CPU)]
     N[(NLLB-200<br/>local CPU, int8)]
+    DB[(Postgres)]
+    LLM[(Groq LLM<br/>summaries)]
 
     A <== "WebRTC audio + video (peer-to-peer)" ==> B
     A <-- "signaling + speech segments (WAV)" --> S
@@ -42,11 +44,13 @@ flowchart LR
     AI -- "within rate limit" --> G
     AI -. "limit hit / Groq down" .-> L
     AI -- "translate to listener's language" --> N
+    S -- "users, calls, transcripts" --> DB
+    AI -- "after the call" --> LLM
 ```
 
-- **Signal server** (`apps/signal`): manages rooms, forwards WebRTC setup
-  messages, forwards speech segments to the AI service and broadcasts the
-  resulting subtitles. It never sees the video.
+- **Signal server** (`apps/signal`): the backend. Manages rooms, forwards
+  WebRTC setup messages and speech segments, broadcasts subtitles, and serves
+  the REST API (accounts, call history) backed by Postgres. It never sees the video.
 - **Web app** (`apps/web`): the call UI. Audio/video go directly between the
   two browsers (or via a TURN relay when a direct path is blocked).
 - **AI service** (`apps/ai`): speech-to-text, then translation. Listens only on
@@ -75,6 +79,7 @@ npm install
 npm run setup:ai          # creates apps/ai/.venv and installs Python packages
 npm run setup:models      # one time: downloads + converts the NLLB translation model
 cp .env.example .env      # then put your GROQ_API_KEY in .env
+npm run db:up             # Postgres in Docker (needs Docker Desktop running)
 ```
 
 Get a free Groq key at https://console.groq.com → **API Keys** (no credit card).
@@ -169,6 +174,44 @@ Signaling messages are processed strictly in order (a Future chain), because
 candidate must never be applied before its offer.
 
 Tests: `npm run test:mobile` (VAD, segment merging, WAV encoding, link parsing).
+
+The app joins calls as a guest (no login screen yet). It shows the "Transcript saved"
+badge when a logged-in web user in the call is saving it.
+
+## Accounts, transcripts and summaries
+
+- **Accounts:** email + password. Passwords are hashed with **scrypt** (Node's
+  built-in, memory-hard). Logging in creates a random 256-bit **session token**;
+  the database stores only its SHA-256, and logging out deletes the session, so
+  tokens are revocable (unlike a plain JWT). Login and sign-up are rate-limited
+  per IP. Wrong email and wrong password give the same error, so the form can't
+  be used to discover who has an account.
+- **Guests can still call** by link. A transcript is saved only when 2 people
+  are in the call and **at least one is logged in**, and **both see a "Transcript
+  saved" badge**: nobody is recorded without knowing.
+- **Summary:** when the last person leaves, the transcript is translated to
+  English with NLLB, summarized by Groq's free LLM (`openai/gpt-oss-20b`, with
+  its own rate limiter), and the summary is translated back into each
+  participant's language. The prompt tells the model to use names (or
+  "they") and never guess gender. Failed summaries can be retried from the page.
+- **History:** `/history` lists your calls; each call page shows the summary
+  (one tab per language) and the full transcript with timestamps, original and
+  translation. Calls are private: other users get a 404, the same answer as
+  for a call that doesn't exist.
+
+**Database:** Postgres with **Drizzle ORM**. Tables are defined in TypeScript
+(`apps/signal/src/db/schema.ts`); `npm run db:generate -w apps/signal` writes
+SQL migrations (`apps/signal/drizzle/`), which run automatically on startup.
+Without `DATABASE_URL`, the server uses **PGlite**, real Postgres compiled to
+WebAssembly, so the app also runs (and tests run) without Docker.
+
+| Endpoint | |
+| --- | --- |
+| `POST /api/auth/signup`, `/login`, `/logout` | Accounts (token in `Authorization: Bearer`) |
+| `GET /api/me` | Current user |
+| `GET /api/calls` | Your calls, newest first |
+| `GET /api/calls/:id` | One call: participants, transcript, summary |
+| `POST /api/calls/:id/summary` | Retry the summary |
 
 ## How a call connects
 
@@ -284,6 +327,8 @@ curl -X POST http://127.0.0.1:8000/translate -H "Content-Type: application/json"
 | `npm run setup:models` | Download + convert the NLLB translation model (one time) |
 | `npm run dev` | Signal (:4000) + web (:3000) + AI (:8000) over HTTP |
 | `npm run dev:https` | Same, over HTTPS for LAN/phone testing |
+| `npm run db:up` / `db:down` | Start / stop Postgres in Docker |
+| `npm run test:signal` | Backend tests (auth, recording rules, privacy) on in-memory Postgres |
 | `npm run test:ai` | Python unit tests (rate limiter, languages, sentence splitting) |
 | `npm run build:mobile` | Build the Android debug APK (`-- --install` to install over USB) |
 | `npm run test:mobile` | Flutter unit tests |

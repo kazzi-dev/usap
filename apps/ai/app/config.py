@@ -38,6 +38,10 @@ class Settings:
     groq_api_key: str | None
     groq_stt_model: str
     groq_limits: GroqLimits
+    groq_llm_model: str  # for after-call summaries
+    groq_llm_rpm: int
+    groq_llm_rpd: int
+    groq_llm_tpm: int
 
     local_model: str  # faster-whisper size: tiny, base, small, medium, large-v3-turbo...
     local_device: str  # "cpu" or "cuda"
@@ -64,6 +68,11 @@ def load_settings() -> Settings:
             audio_seconds_per_hour=_int("GROQ_STT_AUDIO_SECONDS_PER_HOUR", 7_200),
             audio_seconds_per_day=_int("GROQ_STT_AUDIO_SECONDS_PER_DAY", 28_800),
         ),
+        # Groq retires models over time; list current ones with GET /openai/v1/models.
+        groq_llm_model=_env("GROQ_LLM_MODEL", "openai/gpt-oss-20b"),  # type: ignore[arg-type]
+        groq_llm_rpm=_int("GROQ_LLM_RPM", 30),
+        groq_llm_rpd=_int("GROQ_LLM_RPD", 1_000),
+        groq_llm_tpm=_int("GROQ_LLM_TPM", 8_000),
         local_model=_env("LOCAL_WHISPER_MODEL", "small"),  # type: ignore[arg-type]
         local_device=_env("LOCAL_WHISPER_DEVICE", "cpu"),  # type: ignore[arg-type]
         local_compute_type=_env("LOCAL_WHISPER_COMPUTE_TYPE", "int8"),  # type: ignore[arg-type]

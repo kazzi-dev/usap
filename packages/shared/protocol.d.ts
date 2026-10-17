@@ -137,6 +137,8 @@ export interface ServerToClientEvents {
   signal: (msg: { from: string; payload: SignalPayload }) => void;
   "media-state": (msg: { clientId: string; media: MediaState }) => void;
   "language-changed": (msg: { clientId: string; lang: LanguageCode }) => void;
+  /** Whether this call's transcript is being saved (shown to everyone in the room). */
+  "call-recording": (state: RecordingState) => void;
   subtitle: (subtitle: Subtitle) => void;
   /** Sent only to the speaker when one of their segments could not be transcribed. */
   "subtitle-error": (msg: { seq: number; reason: SubtitleErrorReason }) => void;
@@ -145,4 +147,74 @@ export interface ServerToClientEvents {
 /** Response of GET /ice-servers on the signaling server. */
 export interface IceServersResponse {
   iceServers: IceServer[];
+}
+
+/** Sent in the Socket.IO handshake: `io(url, { auth: { token } })`. Omit to join as a guest. */
+export interface SocketAuth {
+  token?: string;
+}
+
+export interface RecordingState {
+  recording: boolean;
+  /** Id of the saved call, for the "view transcript" link afterwards. */
+  callId: string | null;
+}
+
+// ---------- REST API (signal server /api) ----------
+
+export interface ApiUser {
+  id: string;
+  email: string;
+  name: string;
+}
+
+/** POST /api/auth/signup and /api/auth/login */
+export interface AuthResponse {
+  user: ApiUser;
+  /** Send as "Authorization: Bearer <token>". */
+  token: string;
+}
+
+export type SummaryStatus = "pending" | "ready" | "failed" | "skipped";
+
+/** GET /api/calls */
+export interface CallListItem {
+  id: string;
+  roomId: string;
+  startedAt: string;
+  endedAt: string | null;
+  summaryStatus: SummaryStatus;
+  lineCount: number;
+  participants: { name: string; lang: string; isYou: boolean }[];
+}
+
+export interface TranscriptLineDto {
+  id: number;
+  speakerClientId: string;
+  speakerName: string;
+  originalText: string;
+  lang: string | null;
+  translatedText: string;
+  targetLang: string | null;
+  spokenAt: number;
+}
+
+/** GET /api/calls/:id */
+export interface CallDetail {
+  id: string;
+  roomId: string;
+  startedAt: string;
+  endedAt: string | null;
+  summaryStatus: SummaryStatus;
+  /** Summary per language code, e.g. { en: "...", tl: "..." }. */
+  summary: Record<string, string> | null;
+  summaryError: string | null;
+  participants: { clientId: string; name: string; lang: string; isYou: boolean }[];
+  lines: TranscriptLineDto[];
+}
+
+export interface ApiError {
+  error: string;
+  /** Per-field problems for form validation errors. */
+  fields?: Record<string, string>;
 }

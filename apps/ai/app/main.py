@@ -25,6 +25,7 @@ from .rate_limiter import GroqRateLimiter
 from .stt.base import SttUnavailable
 from .stt.groq import GroqStt
 from .stt.local import LocalWhisperStt
+from .summarizer import LlmRateLimiter, Summarizer, SummaryUnavailable, TranscriptLine
 from .transcriber import Transcriber
 from .translator import NllbTranslator
 
@@ -56,6 +57,13 @@ async def lifespan(app: FastAPI):
         log.warning("GROQ_API_KEY is not set: every segment will use the local model.")
     app.state.transcriber = Transcriber(groq, local, GroqRateLimiter(settings.groq_limits))
     app.state.translator = translator
+    app.state.summarizer = Summarizer(
+        client,
+        settings.groq_api_key,
+        settings.groq_llm_model,
+        LlmRateLimiter(settings.groq_llm_rpm, settings.groq_llm_rpd, settings.groq_llm_tpm),
+        translator,
+    )
     yield
     local.shutdown()
     translator.shutdown()
@@ -76,6 +84,10 @@ def get_transcriber(request: Request) -> Transcriber:
 
 def get_translator(request: Request) -> NllbTranslator:
     return request.app.state.translator
+
+
+def get_summarizer(request: Request) -> Summarizer:
+    return request.app.state.summarizer
 
 
 def parse_language(code: str | None, field: str) -> Language | None:
@@ -202,3 +214,37 @@ async def translate_text(
     started = time.perf_counter()
     text = await translator.translate(body.text.strip(), source, target)
     return TranslateOut(text=text, source=source.code, target=target.code, ms=int((time.perf_counter() - started) * 1000))
+
+
+class SummaryLineIn(BaseModel):
+    speaker: str
+    text: str
+    lang: str | None = None
+
+
+class SummaryIn(BaseModel):
+    lines: list[SummaryLineIn]
+    languages: list[str] = []  # summary is always in English, plus these
+
+
+class SummaryOut(BaseModel):
+    summaries: dict[str, str]
+    model: str
+    ms: int
+
+
+@app.post("/summaries", dependencies=[Depends(require_internal_token)])
+async def summarize_call(
+    body: SummaryIn, summarizer: Annotated[Summarizer, Depends(get_summarizer)]
+) -> SummaryOut:
+    """After-call summary: transcript -> English summary (Groq LLM) -> each participant's language (NLLB)."""
+    started = time.perf_counter()
+    lines = [TranscriptLine(l.speaker, l.text.strip(), l.lang) for l in body.lines if l.text.strip()]
+    try:
+        summaries = await summarizer.summarize(lines, body.languages)
+    except SummaryUnavailable as err:
+        log.warning("summary unavailable: %s", err)
+        raise HTTPException(status_code=503, detail=str(err)) from err
+    ms = int((time.perf_counter() - started) * 1000)
+    log.info("summary of %d lines in %dms (%s), languages=%s", len(lines), ms, summarizer.model, list(summaries))
+    return SummaryOut(summaries=summaries, model=summarizer.model, ms=ms)

@@ -57,3 +57,34 @@ export async function processSegment(req: SegmentRequest): Promise<SegmentResult
   const { audioSeconds, sttMs, translateMs, ...subtitle } = body;
   return { ok: true, subtitle, audioSeconds, sttMs, translateMs };
 }
+
+export interface SummaryLine {
+  speaker: string;
+  text: string;
+  lang: string | null;
+}
+
+export type SummaryResult = { ok: true; summaries: Record<string, string> } | { ok: false; detail: string };
+
+/** Asks the AI service for an after-call summary (English + each listed language). */
+export async function requestSummary(lines: SummaryLine[], languages: string[]): Promise<SummaryResult> {
+  try {
+    const res = await fetch(`${config.ai.url}/summaries`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(config.ai.token ? { "X-Internal-Token": config.ai.token } : {}),
+      },
+      body: JSON.stringify({ lines, languages }),
+      signal: AbortSignal.timeout(120_000), // translating + summarizing a long call takes a while
+    });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { detail?: string };
+      return { ok: false, detail: body.detail ?? `AI service returned ${res.status}` };
+    }
+    const body = (await res.json()) as { summaries: Record<string, string> };
+    return { ok: true, summaries: body.summaries };
+  } catch (err) {
+    return { ok: false, detail: `AI service unreachable: ${String(err)}` };
+  }
+}

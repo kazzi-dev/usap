@@ -20,6 +20,13 @@ const list = (value: string | undefined): string[] =>
 
 export const config = {
   port: Number(process.env.SIGNAL_PORT ?? 4000),
+  /**
+   * postgres://... for real Postgres (docker compose up -d). Without it, falls
+   * back to PGlite (Postgres in WebAssembly) stored in apps/signal/.data/.
+   */
+  databaseUrl: process.env.DATABASE_URL?.trim() || `pglite:${resolve(REPO_ROOT, "apps/signal/.data/pglite")}`,
+  /** Set in production behind a reverse proxy, so rate limits see real client IPs. */
+  trustProxy: process.env.TRUST_PROXY === "true",
   /** Empty = allow any origin (local dev / LAN testing). */
   corsOrigins: list(process.env.CORS_ORIGINS),
   /** `--https` flag: serve over HTTPS with the dev certificate from scripts/gen-cert.mjs. */
