@@ -25,7 +25,7 @@ class GroqStt:
         self._model = model
         self._client = client
 
-    async def transcribe(self, wav: bytes, language: str | None = None) -> Transcription:
+    async def transcribe(self, wav: bytes, language: str | None = None, prompt: str | None = None) -> Transcription:
         data = {
             "model": self._model,
             # verbose_json also returns the detected language and per-segment
@@ -35,6 +35,8 @@ class GroqStt:
         }
         if language:
             data["language"] = language
+        if prompt:
+            data["prompt"] = prompt
 
         try:
             response = await self._client.post(

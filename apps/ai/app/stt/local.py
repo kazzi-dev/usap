@@ -45,17 +45,19 @@ class LocalWhisperStt:
     def preload_in_background(self) -> None:
         self._executor.submit(self._get_model)
 
-    async def transcribe(self, samples: np.ndarray, language: str | None = None) -> Transcription:
+    async def transcribe(
+        self, samples: np.ndarray, language: str | None = None, prompt: str | None = None
+    ) -> Transcription:
         if self._pending >= self._max_queue:
             raise SttUnavailable(f"local model busy ({self._pending} segments queued)")
         self._pending += 1
         try:
             loop = asyncio.get_running_loop()
-            return await loop.run_in_executor(self._executor, self._transcribe_sync, samples, language)
+            return await loop.run_in_executor(self._executor, self._transcribe_sync, samples, language, prompt)
         finally:
             self._pending -= 1
 
-    def _transcribe_sync(self, samples: np.ndarray, language: str | None) -> Transcription:
+    def _transcribe_sync(self, samples: np.ndarray, language: str | None, prompt: str | None) -> Transcription:
         model = self._get_model()
         segments, info = model.transcribe(
             samples,
@@ -63,6 +65,7 @@ class LocalWhisperStt:
             beam_size=1,  # greedy decoding: much faster, slightly less accurate
             temperature=0.0,
             condition_on_previous_text=False,  # each segment is independent
+            initial_prompt=prompt,
         )
         segments = list(segments)  # transcription actually runs while iterating
         probs = [s.no_speech_prob for s in segments]

@@ -6,6 +6,12 @@
  * This file is type-only (.d.ts): nothing here exists at runtime.
  */
 
+/**
+ * Languages Usap supports: English, Tagalog, Cebuano (Bisaya), Japanese.
+ * The AI service maps these to Whisper and NLLB codes (apps/ai/app/languages.py).
+ */
+export type LanguageCode = "en" | "tl" | "ceb" | "ja";
+
 /** Whether a participant's mic / camera are currently on. */
 export interface MediaState {
   audio: boolean;
@@ -17,6 +23,8 @@ export interface PeerInfo {
   clientId: string;
   name: string;
   media: MediaState;
+  /** The language this person speaks AND wants to read subtitles in. */
+  lang: LanguageCode;
 }
 
 /*
@@ -60,6 +68,7 @@ export interface JoinRequest {
   clientId: string;
   name: string;
   media: MediaState;
+  lang: LanguageCode;
 }
 
 export type JoinResponse =
@@ -88,10 +97,12 @@ export interface Subtitle {
   segmentId: string;
   speakerId: string;
   originalText: string;
-  /** Text in the listener's language. Same as originalText until Stage 3. */
+  /** originalText translated into the listener's language (same text if both speak the same language). */
   translatedText: string;
-  /** Detected language of originalText (ISO code like "en"), if known. */
-  lang: string | null;
+  /** Language of originalText (the speaker's chosen language). */
+  lang: LanguageCode | null;
+  /** Language of translatedText. Equals `lang` when no translation was needed or possible. */
+  targetLang: LanguageCode | null;
   /** When the speech started (ms since epoch). */
   timestamp: number;
   /** Which speech-to-text engine produced it. */
@@ -108,6 +119,8 @@ export interface ClientToServerEvents {
   "media-state": (media: MediaState) => void;
   "leave-room": () => void;
   "audio-segment": (segment: AudioSegment) => void;
+  /** Change my language mid-call. */
+  "set-language": (lang: LanguageCode) => void;
 }
 
 /** Events the server sends to the browser. */
@@ -122,6 +135,7 @@ export interface ServerToClientEvents {
   "peer-reconnected": (msg: { clientId: string }) => void;
   signal: (msg: { from: string; payload: SignalPayload }) => void;
   "media-state": (msg: { clientId: string; media: MediaState }) => void;
+  "language-changed": (msg: { clientId: string; lang: LanguageCode }) => void;
   subtitle: (subtitle: Subtitle) => void;
   /** Sent only to the speaker when one of their segments could not be transcribed. */
   "subtitle-error": (msg: { seq: number; reason: SubtitleErrorReason }) => void;

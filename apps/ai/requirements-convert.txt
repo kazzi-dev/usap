@@ -1,0 +1,5 @@
+# Only needed ONCE, to convert Meta's NLLB model into the fast CTranslate2
+# format (npm run setup:models). The running service does not import these.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch>=2.4
+transformers>=4.45

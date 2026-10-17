@@ -15,6 +15,7 @@ const IDLE: CallState = {
   subtitles: [],
   captions: { enabled: true, status: "off" },
   localSpeaking: false,
+  language: "en",
 };
 const noopSubscribe = () => () => {};
 const getIdle = () => IDLE;

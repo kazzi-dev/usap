@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import type { LanguageCode } from "@usap/shared";
 import { useParams } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { CamIcon, CamOffIcon, LinkIcon, MicIcon, MicOffIcon, PhoneOffIcon } from "@/components/icons";
+import { LanguageSelect } from "@/components/LanguageSelect";
 import { SubtitleOverlay } from "@/components/SubtitleOverlay";
 import { VideoTile } from "@/components/VideoTile";
 import { CallSession, type CallState } from "@/lib/call-session";
-import { loadDisplayName, saveDisplayName } from "@/lib/display-name";
+import { loadDisplayName, loadLanguage, saveDisplayName, saveLanguage } from "@/lib/preferences";
 import { useCallState } from "@/lib/use-call-session";
 
 const noopSubscribe = () => () => {};
@@ -21,20 +23,37 @@ export function RoomClient() {
   const storedName = useSyncExternalStore(noopSubscribe, loadDisplayName, () => "");
   const [typedName, setTypedName] = useState<string | null>(null);
   const name = typedName ?? storedName;
+  const storedLanguage = useSyncExternalStore(noopSubscribe, loadLanguage, () => "en" as const);
+  const [pickedLanguage, setPickedLanguage] = useState<LanguageCode | null>(null);
+  const language = pickedLanguage ?? storedLanguage;
 
   // Leaving the page (or switching rooms) ends the call and frees the camera.
   useEffect(() => () => session?.end(), [session]);
 
   const join = () => {
-    const displayName = name.trim() || "Guest";
+    // "Rejoin" keeps the name and language of the call you just left, rather
+    // than re-reading saved preferences (another tab may have changed them).
+    const previous = session && session.getState().status !== "idle" ? session : null;
+    const displayName = previous?.name ?? (name.trim() || "Guest");
+    const lang = previous?.getState().language ?? language;
     saveDisplayName(displayName);
-    const next = new CallSession(roomId, displayName);
+    saveLanguage(lang);
+    const next = new CallSession(roomId, displayName, lang);
     setSession(next);
     void next.start();
   };
 
   if (!session || state.status === "idle") {
-    return <PreJoin roomId={roomId} name={name} onNameChange={setTypedName} onJoin={join} />;
+    return (
+      <PreJoin
+        roomId={roomId}
+        name={name}
+        onNameChange={setTypedName}
+        language={language}
+        onLanguageChange={setPickedLanguage}
+        onJoin={join}
+      />
+    );
   }
   if (state.status === "ended" || state.status === "room-full" || state.status === "error") {
     return <CallOver state={state} onRejoin={join} />;
@@ -44,7 +63,14 @@ export function RoomClient() {
 
 // ---------- Screens ----------
 
-function PreJoin(props: { roomId: string; name: string; onNameChange: (v: string) => void; onJoin: () => void }) {
+function PreJoin(props: {
+  roomId: string;
+  name: string;
+  onNameChange: (v: string) => void;
+  language: LanguageCode;
+  onLanguageChange: (lang: LanguageCode) => void;
+  onJoin: () => void;
+}) {
   return (
     <main className="flex min-h-dvh items-center justify-center bg-neutral-950 px-4 text-white">
       <form
@@ -67,6 +93,15 @@ function PreJoin(props: { roomId: string; name: string; onNameChange: (v: string
           placeholder="e.g. Ana"
           autoFocus
           className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-3 outline-none focus:border-sky-500"
+        />
+        <label className="mt-4 block text-sm text-neutral-300" htmlFor="language">
+          Language you speak (subtitles will be shown in it too)
+        </label>
+        <LanguageSelect
+          id="language"
+          value={props.language}
+          onChange={props.onLanguageChange}
+          className="mt-1 w-full px-3 py-3"
         />
         <button type="submit" className="mt-4 w-full rounded-lg bg-sky-600 px-4 py-3 font-medium hover:bg-sky-500">
           Join call
@@ -159,14 +194,26 @@ function InCall({ roomId, name, state, session }: { roomId: string; name: string
             </span>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={copyLink}
-          className="flex shrink-0 items-center gap-2 rounded-lg bg-neutral-800 px-3 py-2 text-sm hover:bg-neutral-700"
-        >
-          <LinkIcon />
-          {copied ? "Copied!" : "Copy invite link"}
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <LanguageSelect
+            value={state.language}
+            onChange={(lang) => {
+              saveLanguage(lang);
+              session.setLanguage(lang);
+            }}
+            className="max-w-28 px-2 py-2 text-sm sm:max-w-none"
+          />
+          <button
+            type="button"
+            onClick={copyLink}
+            aria-label="Copy invite link"
+            className="flex items-center gap-2 rounded-lg bg-neutral-800 px-3 py-2 text-sm hover:bg-neutral-700"
+          >
+            <LinkIcon />
+            <span className="hidden sm:inline">{copied ? "Copied!" : "Copy invite link"}</span>
+            <span className="sm:hidden">{copied ? "Copied" : "Invite"}</span>
+          </button>
+        </div>
       </header>
 
       {(state.error || (state.status !== "starting" && !state.signalConnected)) && (

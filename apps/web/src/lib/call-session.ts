@@ -1,4 +1,4 @@
-import type { MediaState, PeerInfo, SignalPayload, Subtitle, SubtitleErrorReason } from "@usap/shared";
+import type { LanguageCode, MediaState, PeerInfo, SignalPayload, Subtitle, SubtitleErrorReason } from "@usap/shared";
 import { io } from "socket.io-client";
 import { randomId } from "./ids";
 import { fetchIceServers, getSignalUrl, type SignalSocket } from "./signal";
@@ -72,6 +72,8 @@ export interface CallState {
   captions: { enabled: boolean; status: CaptionStatus };
   /** True while voice activity detection hears us talking. */
   localSpeaking: boolean;
+  /** The language I speak and read subtitles in. */
+  language: LanguageCode;
 }
 
 type Kind = "audio" | "video";
@@ -135,6 +137,7 @@ export class CallSession {
     subtitles: [],
     captions: { enabled: true, status: "off" },
     localSpeaking: false,
+    language: "en",
   };
   private readonly listeners = new Set<() => void>();
 
@@ -161,8 +164,12 @@ export class CallSession {
 
   constructor(
     private readonly roomId: string,
-    private readonly name: string,
-  ) {}
+    /** Display name shown to the other person. */
+    readonly name: string,
+    language: LanguageCode,
+  ) {
+    this.state = { ...this.state, language };
+  }
 
   // ---------- Store interface for React ----------
 
@@ -228,6 +235,16 @@ export class CallSession {
       await this.useLocalTrack(newTrack);
       if (this.joined) void this.startCaptions();
     }
+  }
+
+  /**
+   * Change the language I speak and read. The other person's next subtitles
+   * get translated into it, and my speech is transcribed as this language.
+   */
+  setLanguage(language: LanguageCode): void {
+    if (language === this.state.language) return;
+    this.set({ language });
+    if (this.joined) this.socket?.emit("set-language", language);
   }
 
   /** Turn subtitles of OUR speech on/off (off saves free-tier quota). */
@@ -426,6 +443,8 @@ export class CallSession {
 
     socket.on("media-state", ({ clientId, media }) => this.patchRemote(clientId, { media }));
 
+    socket.on("language-changed", ({ clientId, lang }) => this.patchRemote(clientId, { lang }));
+
     socket.on("signal", ({ from, payload }) => void this.handleSignal(from, payload));
 
     socket.on("subtitle", (subtitle) => this.addSubtitle(subtitle));
@@ -448,6 +467,7 @@ export class CallSession {
         clientId: this.clientId,
         name: this.name,
         media: this.state.localMedia,
+        lang: this.state.language,
       });
     } catch {
       // No reply in time: reconnect, which triggers another join attempt.

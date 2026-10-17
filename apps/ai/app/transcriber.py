@@ -8,6 +8,7 @@ import time
 from dataclasses import dataclass
 
 from .audio import decode_wav
+from .languages import Language
 from .rate_limiter import GroqRateLimiter
 from .stt.base import SttUnavailable, Transcription
 from .stt.groq import GroqStt
@@ -32,12 +33,16 @@ def _normalize(text: str) -> str:
     return re.sub(r"[^\w\s]", "", text.lower()).strip()
 
 
-def is_probably_hallucination(t: Transcription) -> bool:
+def is_probably_hallucination(t: Transcription, prompt: str | None = None) -> bool:
     if not t.text:
         return True
     if t.no_speech_prob is not None and t.no_speech_prob > _NO_SPEECH_THRESHOLD:
         return True
-    return _normalize(t.text) in _HALLUCINATIONS
+    text = _normalize(t.text)
+    # On near-silence, Whisper sometimes just repeats the prompt it was given.
+    if prompt and text and text in _normalize(prompt):
+        return True
+    return text in _HALLUCINATIONS
 
 
 @dataclass(frozen=True)
@@ -55,9 +60,11 @@ class Transcriber:
         self.local = local
         self.limiter = limiter
 
-    async def transcribe(self, wav: bytes, segment_id: str, language: str | None = None) -> SegmentResult:
+    async def transcribe(self, wav: bytes, segment_id: str, language: Language | None = None) -> SegmentResult:
         audio = decode_wav(wav)  # raises InvalidAudio
         started = time.perf_counter()
+        hint = language.whisper if language else None
+        prompt = language.whisper_prompt if language else None
 
         result: Transcription | None = None
         fallback_reason = ""
@@ -67,17 +74,17 @@ class Transcriber:
             fallback_reason = "free-tier limit reached"
         else:
             try:
-                result = await self.groq.transcribe(wav, language)
+                result = await self.groq.transcribe(wav, hint, prompt)
             except SttUnavailable as err:
                 fallback_reason = str(err)
                 if err.retry_after:
                     self.limiter.cool_down(err.retry_after)
 
         if result is None:
-            result = await self.local.transcribe(audio.samples, language)  # may raise SttUnavailable
+            result = await self.local.transcribe(audio.samples, hint, prompt)  # may raise SttUnavailable
 
         processing_ms = int((time.perf_counter() - started) * 1000)
-        dropped = is_probably_hallucination(result)
+        dropped = is_probably_hallucination(result, prompt)
         log.info(
             "segment=%s engine=%s%s audio=%.1fs took=%dms lang=%s%s text=%r",
             segment_id,

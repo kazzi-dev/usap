@@ -10,7 +10,8 @@ from dotenv import load_dotenv
 
 from .rate_limiter import GroqLimits
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
+AI_ROOT = Path(__file__).resolve().parents[1]  # apps/ai
+REPO_ROOT = AI_ROOT.parents[1]
 # Real environment variables win over .env (that's what production wants).
 load_dotenv(REPO_ROOT / ".env", override=False)
 
@@ -44,6 +45,12 @@ class Settings:
     local_preload: bool  # load the model at startup so the first fallback isn't slow
     local_max_queue: int  # refuse new work if this many segments are already waiting
 
+    nllb_model_dir: Path  # CTranslate2 model created by prepare_models.py
+    nllb_device: str
+    nllb_compute_type: str
+    nllb_beam_size: int  # 1 = fastest; higher = slightly better, slower
+    nllb_preload: bool
+
 
 def load_settings() -> Settings:
     return Settings(
@@ -62,4 +69,9 @@ def load_settings() -> Settings:
         local_compute_type=_env("LOCAL_WHISPER_COMPUTE_TYPE", "int8"),  # type: ignore[arg-type]
         local_preload=_bool("LOCAL_WHISPER_PRELOAD", True),
         local_max_queue=_int("LOCAL_WHISPER_MAX_QUEUE", 4),
+        nllb_model_dir=Path(_env("NLLB_MODEL_DIR", str(AI_ROOT / "models" / "nllb-200-distilled-600M-ct2-int8"))),  # type: ignore[arg-type]
+        nllb_device=_env("NLLB_DEVICE", "cpu"),  # type: ignore[arg-type]
+        nllb_compute_type=_env("NLLB_COMPUTE_TYPE", "int8"),  # type: ignore[arg-type]
+        nllb_beam_size=_int("NLLB_BEAM_SIZE", 2),
+        nllb_preload=_bool("NLLB_PRELOAD", True),
     )

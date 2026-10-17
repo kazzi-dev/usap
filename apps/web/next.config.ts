@@ -9,6 +9,9 @@ const lanIps = Object.values(networkInterfaces())
   .map((n) => n!.address);
 
 const nextConfig: NextConfig = {
+  // Lets a second dev server run from this folder with its own build output
+  // (used for automated browser tests over plain HTTP; see .claude/launch.json).
+  distDir: process.env.USAP_NEXT_DIST_DIR || ".next",
   cacheComponents: true,
   partialPrefetching: true,
   allowedDevOrigins: lanIps,

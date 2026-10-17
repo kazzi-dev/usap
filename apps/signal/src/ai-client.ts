@@ -1,4 +1,4 @@
-import type { Subtitle, SubtitleErrorReason } from "@usap/shared";
+import type { LanguageCode, Subtitle, SubtitleErrorReason } from "@usap/shared";
 import { config } from "./config.js";
 
 export interface SegmentRequest {
@@ -7,16 +7,21 @@ export interface SegmentRequest {
   /** When the speech started (ms since epoch). */
   timestamp: number;
   wav: Uint8Array;
+  /** What the speaker speaks (speech-to-text hint + translation source). */
+  language: LanguageCode;
+  /** What the listener reads. */
+  targetLanguage: LanguageCode;
 }
 
 export type SegmentResult =
-  | { ok: true; subtitle: Subtitle; audioSeconds: number; processingMs: number }
+  | { ok: true; subtitle: Subtitle; audioSeconds: number; sttMs: number; translateMs: number }
   | { ok: false; reason: SubtitleErrorReason; detail: string };
 
 /** Shape of POST /segments on the Python AI service (apps/ai/app/main.py). */
 interface AiSegmentResponse extends Subtitle {
   audioSeconds: number;
-  processingMs: number;
+  sttMs: number;
+  translateMs: number;
 }
 
 /** Sends one speech segment to the AI service and returns the subtitle. */
@@ -26,6 +31,8 @@ export async function processSegment(req: SegmentRequest): Promise<SegmentResult
   form.append("segment_id", req.segmentId);
   form.append("speaker_id", req.speakerId);
   form.append("timestamp", String(Math.round(req.timestamp)));
+  form.append("language", req.language);
+  form.append("target_language", req.targetLanguage);
 
   let res: Response;
   try {
@@ -34,7 +41,7 @@ export async function processSegment(req: SegmentRequest): Promise<SegmentResult
       body: form,
       headers: config.ai.token ? { "X-Internal-Token": config.ai.token } : {},
       // Local Whisper on a slow CPU can take a while; after this the subtitle is too late to matter.
-      signal: AbortSignal.timeout(20_000),
+      signal: AbortSignal.timeout(25_000),
     });
   } catch (err) {
     return { ok: false, reason: "ai-unavailable", detail: String(err) };
@@ -47,6 +54,6 @@ export async function processSegment(req: SegmentRequest): Promise<SegmentResult
   }
 
   const body = (await res.json()) as AiSegmentResponse;
-  const { audioSeconds, processingMs, ...subtitle } = body;
-  return { ok: true, subtitle, audioSeconds, processingMs };
+  const { audioSeconds, sttMs, translateMs, ...subtitle } = body;
+  return { ok: true, subtitle, audioSeconds, sttMs, translateMs };
 }

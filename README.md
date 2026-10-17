@@ -8,15 +8,14 @@ the other person's screen in their language.
 Built entirely on free tools: WebRTC, Socket.IO, Groq's free tier, and local
 open-source models.
 
-> **Status: Stage 2 of 6.** 1-on-1 video calls with live subtitles in the
-> speaker's own language. Translation, the mobile app, transcripts and
-> summaries come in the next stages.
+> **Status: Stage 3 of 6.** 1-on-1 video calls with live translated
+> subtitles. The mobile app, transcripts and summaries come in the next stages.
 
 | Stage | What | Status |
 | ----- | ---- | ------ |
 | 1 | 1-on-1 browser video call (rooms, toggles, reconnect) | ✅ |
 | 2 | Live same-language subtitles (VAD, Groq Whisper, rate limiter, local fallback) | ✅ |
-| 3 | Translation (NLLB-200) with per-user language | ⏳ |
+| 3 | Translation (NLLB-200) with per-user language | ✅ |
 | 4 | Flutter app joining the same calls | ⏳ |
 | 5 | Postgres transcripts, AI summary, call history, auth | ⏳ |
 | 6 | Tests, error states, deployment guide | ⏳ |
@@ -33,6 +32,7 @@ flowchart LR
     AI[AI service<br/>Python + FastAPI]
     G[(Groq Whisper<br/>free tier)]
     L[(faster-whisper<br/>local CPU)]
+    N[(NLLB-200<br/>local CPU, int8)]
 
     A <== "WebRTC audio + video (peer-to-peer)" ==> B
     A <-- "signaling + speech segments (WAV)" --> S
@@ -40,6 +40,7 @@ flowchart LR
     S -- "POST /segments" --> AI
     AI -- "within rate limit" --> G
     AI -. "limit hit / Groq down" .-> L
+    AI -- "translate to listener's language" --> N
 ```
 
 - **Signal server** (`apps/signal`): manages rooms, forwards WebRTC setup
@@ -47,8 +48,9 @@ flowchart LR
   resulting subtitles. It never sees the video.
 - **Web app** (`apps/web`): the call UI. Audio/video go directly between the
   two browsers (or via a TURN relay when a direct path is blocked).
-- **AI service** (`apps/ai`): speech-to-text. Listens only on `127.0.0.1`, so
-  only the signal server can reach it and the Groq key never leaves the server.
+- **AI service** (`apps/ai`): speech-to-text, then translation. Listens only on
+  `127.0.0.1`, so only the signal server can reach it and the Groq key never
+  leaves the server.
 
 ## Repo layout
 
@@ -69,18 +71,25 @@ Requirements: **Node 22+** and **Python 3.12**.
 ```bash
 npm install
 npm run setup:ai          # creates apps/ai/.venv and installs Python packages
+npm run setup:models      # one time: downloads + converts the NLLB translation model
 cp .env.example .env      # then put your GROQ_API_KEY in .env
 ```
 
 Get a free Groq key at https://console.groq.com → **API Keys** (no credit card).
 Without a key everything still works, just slower: every segment uses the local model.
 
-The first start downloads the local Whisper model (~500 MB).
+Downloads, once: the local Whisper model (~500 MB, on first start) and Meta's
+NLLB model (~2.5 GB, during `setup:models`, converted to a ~600 MB int8 model in
+`apps/ai/models/`). `setup:models` also installs PyTorch, which is only used for
+that conversion.
 
 > **Windows "Smart App Control" note:** the first time Python loads a freshly
 > installed library, Windows may block it ("An Application Control policy has
 > blocked this file"). It checks the file online and usually allows it on the
 > next start. Run the command again.
+
+> **Editing Python code?** Restart `npm run dev` afterwards. The AI service
+> doesn't auto-reload: on Windows the old process can keep serving stale code.
 
 ### Run on one computer (two tabs)
 
@@ -178,12 +187,52 @@ the `Retry-After` time. Current remaining quota: `GET http://127.0.0.1:8000/heal
 Typical latency: ~0.5 s of silence detection + 0.3 to 0.7 s on Groq, so a
 subtitle appears about 1 s after you stop talking (2 to 3 s with the local model).
 
+## How translation works
+
+Each person picks **the language they speak** (English, Tagalog, Cebuano or
+Japanese) before joining, and can change it during the call. Subtitles are
+always shown in your own language.
+
+1. The speaker's language is used as a **hint for Whisper**, which makes
+   transcription more accurate than letting Whisper guess.
+2. The signal server knows the listener's language and asks the AI service to
+   translate into it with **NLLB-200** (Meta's "No Language Left Behind" model,
+   distilled 600M version), running locally through **CTranslate2**.
+3. The listener sees the translation (big) with the original underneath (small);
+   the speaker sees what they said plus what the other person is reading.
+
+Details that matter:
+
+- **int8 quantization.** Meta's weights are converted once to 8-bit integers
+  (`apps/ai/app/prepare_models.py`): 4x smaller and several times faster on a
+  CPU, with nearly the same quality. A translation takes ~0.2 to 0.5 s.
+- **One sentence at a time.** NLLB was trained on single sentences and silently
+  drops sentences when given several at once, so text is split into sentences
+  and translated as one batch.
+- **Cache.** The last 512 translations are kept in memory; repeated short phrases
+  ("Salamat", "Okay") cost nothing.
+- **Cebuano.** Whisper has no Cebuano model. For Cebuano speakers it runs in
+  Tagalog mode (closest language it knows: same spelling, many shared words)
+  with a short Cebuano example as a prompt, which pulls the spelling toward
+  Bisaya. NLLB itself does support Cebuano (`ceb_Latn`).
+- **Fallback.** If translation fails, the listener still gets the original text.
+
+Text-only translation endpoint, handy for testing:
+```bash
+curl -X POST http://127.0.0.1:8000/translate -H "Content-Type: application/json" -d "{\"text\":\"Kumusta ka?\",\"source\":\"tl\",\"target\":\"en\"}"
+```
+
 ### Known limitations
 
 - A subtitle appears when the speaker *pauses*; a long sentence without a
   pause shows up all at once at the end.
-- Whisper has no Cebuano model. Bisaya speech will be transcribed poorly until
-  Stage 3 adds language hints (it often comes out as Tagalog-like text).
+- Cebuano speech-to-text is a workaround (see above) and is the weakest link.
+  A dedicated model such as Meta's MMS (which supports Cebuano) could replace it.
+- Translation quality: NLLB is good with full sentences but can misread short,
+  informal fragments and occasionally adds words (e.g. a polite closing in
+  Japanese). Mixed Taglish works reasonably well.
+- NLLB-200 is licensed **CC-BY-NC 4.0** (non-commercial), fine for a portfolio
+  project; a commercial product would need a different translation model.
 - Rate-limit counters are in memory, so restarting the AI service resets them
   (Groq's own `429` responses still protect you).
 
@@ -192,9 +241,10 @@ subtitle appears about 1 s after you stop talking (2 to 3 s with the local model
 | Command | What it does |
 | ------- | ------------ |
 | `npm run setup:ai` | Create the Python venv and install AI packages |
+| `npm run setup:models` | Download + convert the NLLB translation model (one time) |
 | `npm run dev` | Signal (:4000) + web (:3000) + AI (:8000) over HTTP |
 | `npm run dev:https` | Same, over HTTPS for LAN/phone testing |
-| `npm run test:ai` | Python unit tests (rate limiter) |
+| `npm run test:ai` | Python unit tests (rate limiter, languages, sentence splitting) |
 | `npm run typecheck` | TypeScript checks for web + signal |
 | `npm run lint` | ESLint for the web app |
 | `npm run build` | Production build of web + signal |

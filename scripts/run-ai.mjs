@@ -19,6 +19,8 @@ const port = process.env.AI_PORT || "8000";
 const args = process.argv.includes("--test")
   ? ["-m", "pytest", "-q"]
   : ["-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", port];
+// --reload restarts on code changes. Not used by npm run dev: on Windows the old
+// process can keep running (its model worker threads block shutdown) and serve stale code.
 if (process.argv.includes("--reload")) args.push("--reload", "--reload-dir", "app");
 
 const child = spawn(python, args, { cwd: aiDir, stdio: "inherit" });

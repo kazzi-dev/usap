@@ -6,6 +6,7 @@ import type {
   ClientToServerEvents,
   IceServersResponse,
   JoinRequest,
+  LanguageCode,
   ServerToClientEvents,
 } from "@usap/shared";
 import { processSegment } from "./ai-client.js";
@@ -70,6 +71,8 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents, Record<string,
 });
 
 const ROOM_ID = /^[a-z0-9-]{3,64}$/i;
+const LANGUAGES = new Set<LanguageCode>(["en", "tl", "ceb", "ja"]);
+const isLanguage = (value: unknown): value is LanguageCode => LANGUAGES.has(value as LanguageCode);
 
 function parseJoin(req: unknown): JoinRequest | null {
   if (typeof req !== "object" || req === null) return null;
@@ -82,6 +85,7 @@ function parseJoin(req: unknown): JoinRequest | null {
     clientId: r.clientId,
     name: name || "Guest",
     media: { audio: r.media?.audio === true, video: r.media?.video === true },
+    lang: isLanguage(r.lang) ? r.lang : "en",
   };
 }
 
@@ -125,7 +129,12 @@ io.on("connection", (socket) => {
       socket.to(req.roomId).emit("peer-reconnected", { clientId: req.clientId });
       log(`[room ${req.roomId}] ${req.clientId} resumed`);
     } else {
-      socket.to(req.roomId).emit("peer-joined", { clientId: req.clientId, name: req.name, media: req.media });
+      socket.to(req.roomId).emit("peer-joined", {
+        clientId: req.clientId,
+        name: req.name,
+        media: req.media,
+        lang: req.lang,
+      });
       log(`[room ${req.roomId}] ${req.clientId} (${req.name}) joined, ${result.peers.length + 1} in room`);
     }
 
@@ -149,6 +158,13 @@ io.on("connection", (socket) => {
   });
 
   socket.on("leave-room", leaveCurrentRoom);
+
+  socket.on("set-language", (lang) => {
+    const { roomId, clientId } = socket.data;
+    if (!roomId || !clientId || !isLanguage(lang)) return;
+    rooms.setLanguage(roomId, clientId, lang);
+    socket.to(roomId).emit("language-changed", { clientId, lang });
+  });
 
   // ---------- Subtitles: speech segment -> AI service -> everyone in the room ----------
   let segmentsInFlight = 0;
@@ -174,7 +190,17 @@ io.on("connection", (socket) => {
     segmentsInFlight++;
     const durationMs = Number.isFinite(segment.durationMs) ? Math.max(0, segment.durationMs) : 0;
     const segmentId = `${clientId.slice(0, 8)}-${seq}`;
-    void processSegment({ segmentId, speakerId: clientId, timestamp: Date.now() - durationMs, wav: audio })
+    // Translate into the listener's language (1-on-1: the one other person).
+    const speakerLang = rooms.get(roomId, clientId)?.lang ?? "en";
+    const listenerLang = rooms.others(roomId, clientId)[0]?.lang ?? speakerLang;
+    void processSegment({
+      segmentId,
+      speakerId: clientId,
+      timestamp: Date.now() - durationMs,
+      wav: audio,
+      language: speakerLang,
+      targetLanguage: listenerLang,
+    })
       .then((result) => {
         if (!result.ok) {
           log(`[room ${roomId}] segment ${segmentId} failed (${result.reason}): ${result.detail}`);
@@ -183,7 +209,8 @@ io.on("connection", (socket) => {
         }
         log(
           `[room ${roomId}] subtitle ${segmentId} engine=${result.subtitle.engine} audio=${result.audioSeconds}s ` +
-            `took=${result.processingMs}ms${result.subtitle.originalText ? "" : " (no speech)"}`,
+            `stt=${result.sttMs}ms translate=${result.translateMs}ms (${speakerLang}->${listenerLang})` +
+            (result.subtitle.originalText ? "" : " (no speech)"),
         );
         // Empty text = silence, noise or a filtered hallucination: nothing to show.
         if (result.subtitle.originalText) io.to(roomId).emit("subtitle", result.subtitle);

@@ -9,5 +9,8 @@ httpx>=0.27                # async HTTP client for the Groq API
 faster-whisper>=1.1        # local Whisper fallback (CTranslate2, runs on CPU)
 numpy>=1.26
 
+# Translation (NLLB-200 via CTranslate2, already installed with faster-whisper)
+sentencepiece>=0.2      # NLLB tokenizer
+
 # Tests
 pytest>=8.3

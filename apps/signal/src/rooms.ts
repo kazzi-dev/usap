@@ -1,4 +1,4 @@
-import type { MediaState, PeerInfo } from "@usap/shared";
+import type { LanguageCode, MediaState, PeerInfo } from "@usap/shared";
 
 /** A participant as the server sees them: public info plus connection bookkeeping. */
 interface Participant extends PeerInfo {
@@ -29,10 +29,11 @@ export interface RoomManagerOptions {
   graceMs: number;
 }
 
-const toPeerInfo = ({ clientId, name, media }: Participant): PeerInfo => ({
+const toPeerInfo = ({ clientId, name, media, lang }: Participant): PeerInfo => ({
   clientId,
   name,
   media: { ...media },
+  lang,
 });
 
 /**
@@ -64,6 +65,7 @@ export class RoomManager {
       existing.socketId = socketId;
       existing.name = info.name;
       existing.media = { ...info.media };
+      existing.lang = info.lang;
       return {
         ok: true,
         resumed: true,
@@ -90,6 +92,7 @@ export class RoomManager {
       clientId: info.clientId,
       name: info.name,
       media: { ...info.media },
+      lang: info.lang,
       socketId,
       graceTimer: null,
     });
@@ -141,6 +144,16 @@ export class RoomManager {
   setMedia(roomId: string, clientId: string, media: MediaState): void {
     const participant = this.rooms.get(roomId)?.get(clientId);
     if (participant) participant.media = { ...media };
+  }
+
+  setLanguage(roomId: string, clientId: string, lang: LanguageCode): void {
+    const participant = this.rooms.get(roomId)?.get(clientId);
+    if (participant) participant.lang = lang;
+  }
+
+  get(roomId: string, clientId: string): PeerInfo | null {
+    const participant = this.rooms.get(roomId)?.get(clientId);
+    return participant ? toPeerInfo(participant) : null;
   }
 
   others(roomId: string, clientId: string): PeerInfo[] {
