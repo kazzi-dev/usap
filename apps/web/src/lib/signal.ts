@@ -13,6 +13,9 @@ const DEFAULT_SIGNAL_PORT = 4000;
  */
 export function getSignalUrl(): string {
   const fromEnv = process.env.NEXT_PUBLIC_SIGNAL_URL;
+  // "same-origin": the signal server is reachable through this site's own
+  // address (a reverse proxy in front of both, as in `npm run share`).
+  if (fromEnv === "same-origin") return window.location.origin;
   if (fromEnv) return fromEnv.replace(/\/$/, "");
   const { protocol, hostname } = window.location;
   return `${protocol}//${hostname}:${DEFAULT_SIGNAL_PORT}`;

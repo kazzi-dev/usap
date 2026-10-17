@@ -34,3 +34,4 @@ apps/ai/models/
 
 # local PGlite database (used when DATABASE_URL is not set)
 apps/signal/.data/
+.next-share/

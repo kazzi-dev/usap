@@ -14,6 +14,7 @@
     "db:down": "docker compose down",
     "dev": "concurrently -n signal,web,ai -c blue,green,magenta \"npm run dev -w apps/signal\" \"npm run dev -w apps/web\" \"node scripts/run-ai.mjs\"",
     "dev:https": "node scripts/gen-cert.mjs && concurrently -n signal,web,ai -c blue,green,magenta \"npm run dev:https -w apps/signal\" \"npm run dev:https -w apps/web\" \"node scripts/run-ai.mjs\"",
+    "share": "node scripts/share.mjs",
     "test:ai": "node scripts/run-ai.mjs --test",
     "build": "npm run build -w apps/signal && npm run build -w apps/web",
     "typecheck": "npm run typecheck -w apps/signal && npm run typecheck -w apps/web",

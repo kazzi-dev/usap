@@ -130,6 +130,32 @@ your laptop's LAN IPs. On the phone:
 
 If Windows asks whether to allow Node.js on private networks, click **Allow**.
 
+### Share with someone outside your network (`npm run share`)
+
+```bash
+npm run share
+```
+
+Prints a public link like `https://some-words.trycloudflare.com` to send to
+anyone. They open it in a browser; no install, no certificate warnings.
+
+```
+friend ─https─▶ Cloudflare ─tunnel─▶ cloudflared ─▶ share proxy :8800 ─┬─ /api, /socket.io ─▶ signal :4200
+                                                                     └─ everything else ─▶ website :3200
+```
+
+- Needs [`cloudflared`](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/)
+  (`winget install -e --id Cloudflare.cloudflared`). Free "quick tunnels" need no account.
+- A quick tunnel forwards to ONE local address, so `scripts/share.mjs` runs a small
+  reverse proxy (plain Node, WebSockets included) in front of both servers, and builds
+  the website in "same-origin" mode (`NEXT_PUBLIC_SIGNAL_URL=same-origin`).
+- The AI service is never exposed; only the signal server talks to it.
+- Run it **instead of** `npm run dev` (they share the local database). Your laptop must
+  stay on. Anyone with the link can use it (and your Groq quota), so stop with Ctrl+C
+  when done; the link changes every time. `--no-build` reuses the last build.
+- Without TURN, calls between two home Wi-Fi networks usually connect; mobile data
+  (carrier NAT) often needs the TURN relay below.
+
 ### TURN (optional, for calls across different networks)
 
 STUN alone is enough on the same Wi-Fi. For calls across strict NATs/mobile

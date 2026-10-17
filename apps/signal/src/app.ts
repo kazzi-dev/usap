@@ -40,7 +40,9 @@ function validationError(res: Response, error: z.ZodError) {
  */
 export function createApp(deps: AppDeps) {
   const app = express();
-  if (deps.trustProxy) app.set("trust proxy", 1);
+  // Proxies on this same machine (nginx, cloudflared, the share proxy) are
+  // trusted to report the real client IP in X-Forwarded-For.
+  if (deps.trustProxy) app.set("trust proxy", "loopback");
   app.disable("x-powered-by");
   app.use(express.json({ limit: "20kb" }));
 
