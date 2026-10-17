@@ -31,6 +31,17 @@ export const config = {
     username: process.env.TURN_USERNAME?.trim() || null,
     credential: process.env.TURN_CREDENTIAL?.trim() || null,
   },
+  ai: {
+    /** The Python AI service (apps/ai). Only this server talks to it. */
+    url: (process.env.AI_SERVICE_URL?.trim() || "http://127.0.0.1:8000").replace(/\/$/, ""),
+    /** Optional shared secret, must match AI_SERVICE_TOKEN on the AI service. */
+    token: process.env.AI_SERVICE_TOKEN?.trim() || null,
+  },
+  subtitles: {
+    /** Max segments per speaker being transcribed at once; extra ones are dropped. */
+    maxInFlightPerSpeaker: 3,
+    maxSegmentBytes: 1_500_000, // ~45s of 16 kHz 16-bit mono WAV
+  },
   room: {
     capacity: 2,
     /** How long someone whose connection dropped keeps their place in the room. */

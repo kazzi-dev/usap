@@ -8,8 +8,10 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently -n signal,web -c blue,green \"npm run dev -w apps/signal\" \"npm run dev -w apps/web\"",
-    "dev:https": "node scripts/gen-cert.mjs && concurrently -n signal,web -c blue,green \"npm run dev:https -w apps/signal\" \"npm run dev:https -w apps/web\"",
+    "setup:ai": "node scripts/setup-ai.mjs",
+    "dev": "concurrently -n signal,web,ai -c blue,green,magenta \"npm run dev -w apps/signal\" \"npm run dev -w apps/web\" \"node scripts/run-ai.mjs --reload\"",
+    "dev:https": "node scripts/gen-cert.mjs && concurrently -n signal,web,ai -c blue,green,magenta \"npm run dev:https -w apps/signal\" \"npm run dev:https -w apps/web\" \"node scripts/run-ai.mjs --reload\"",
+    "test:ai": "node scripts/run-ai.mjs --test",
     "build": "npm run build -w apps/signal && npm run build -w apps/web",
     "typecheck": "npm run typecheck -w apps/signal && npm run typecheck -w apps/web",
     "lint": "npm run lint -w apps/web"

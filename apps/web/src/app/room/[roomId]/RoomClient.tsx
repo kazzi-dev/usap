@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { CamIcon, CamOffIcon, LinkIcon, MicIcon, MicOffIcon, PhoneOffIcon } from "@/components/icons";
+import { SubtitleOverlay } from "@/components/SubtitleOverlay";
 import { VideoTile } from "@/components/VideoTile";
 import { CallSession, type CallState } from "@/lib/call-session";
 import { loadDisplayName, saveDisplayName } from "@/lib/display-name";
@@ -186,6 +187,7 @@ function InCall({ roomId, name, state, session }: { roomId: string; name: string
               <MicOffIcon className="size-4" />
             </span>
           )}
+          <SubtitleOverlay lines={state.subtitles} />
         </VideoTile>
 
         <VideoTile
@@ -193,7 +195,10 @@ function InCall({ roomId, name, state, session }: { roomId: string; name: string
           showVideo={state.localMedia.video}
           name={name}
           isLocal
-          className="absolute bottom-3 right-3 aspect-[3/4] w-28 rounded-xl border border-neutral-700 shadow-lg sm:aspect-video sm:w-56"
+          className={`absolute bottom-3 right-3 aspect-[3/4] w-28 rounded-xl border shadow-lg transition-colors sm:aspect-video sm:w-56 ${
+            // Green outline while voice detection hears you: shows subtitles are picking you up.
+            state.localSpeaking ? "border-emerald-400 ring-2 ring-emerald-400" : "border-neutral-700"
+          }`}
         />
       </section>
 
@@ -212,6 +217,13 @@ function InCall({ roomId, name, state, session }: { roomId: string; name: string
         >
           {state.localMedia.video ? <CamIcon /> : <CamOffIcon />}
         </ControlButton>
+        <ControlButton
+          label={captionsLabel(state.captions.status)}
+          active={state.captions.enabled}
+          onClick={() => session.toggleCaptions()}
+        >
+          <span className={`text-sm font-bold ${state.captions.status === "unavailable" ? "line-through" : ""}`}>CC</span>
+        </ControlButton>
         <button
           type="button"
           onClick={() => session.end()}
@@ -224,6 +236,19 @@ function InCall({ roomId, name, state, session }: { roomId: string; name: string
       </footer>
     </main>
   );
+}
+
+function captionsLabel(status: CallState["captions"]["status"]): string {
+  switch (status) {
+    case "on":
+      return "Subtitles for your speech are on. Click to turn off";
+    case "starting":
+      return "Starting subtitles…";
+    case "unavailable":
+      return "Subtitles unavailable (no microphone or voice detection failed)";
+    case "off":
+      return "Subtitles for your speech are off. Click to turn on";
+  }
 }
 
 function ControlButton(props: { label: string; active: boolean; onClick: () => void; children: React.ReactNode }) {

@@ -8,6 +8,7 @@ import type {
   JoinRequest,
   ServerToClientEvents,
 } from "@usap/shared";
+import { processSegment } from "./ai-client.js";
 import { config, loadDevCertificate } from "./config.js";
 import { getIceServers, hasTurnConfigured } from "./ice.js";
 import { RoomManager } from "./rooms.js";
@@ -64,6 +65,8 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents, Record<string,
   // Detect dead connections (e.g. phone lost Wi-Fi) within ~25s instead of the 45s default.
   pingInterval: 10_000,
   pingTimeout: 15_000,
+  // Audio segments are binary messages of up to ~1.5 MB.
+  maxHttpBufferSize: 2_000_000,
 });
 
 const ROOM_ID = /^[a-z0-9-]{3,64}$/i;
@@ -146,6 +149,49 @@ io.on("connection", (socket) => {
   });
 
   socket.on("leave-room", leaveCurrentRoom);
+
+  // ---------- Subtitles: speech segment -> AI service -> everyone in the room ----------
+  let segmentsInFlight = 0;
+
+  socket.on("audio-segment", (segment) => {
+    const { roomId, clientId } = socket.data;
+    if (!roomId || !clientId) return;
+    const seq = Number.isInteger(segment?.seq) ? segment.seq : -1;
+    // Socket.IO delivers binary data to Node as a Buffer (a Uint8Array).
+    const audio = segment?.audio;
+    if (!(audio instanceof Uint8Array) || audio.byteLength === 0 || audio.byteLength > config.subtitles.maxSegmentBytes) {
+      socket.emit("subtitle-error", { seq, reason: "invalid-audio" });
+      return;
+    }
+    // Backpressure: if the AI service is falling behind, drop new segments
+    // instead of building an ever-growing queue of stale subtitles.
+    if (segmentsInFlight >= config.subtitles.maxInFlightPerSpeaker) {
+      socket.emit("subtitle-error", { seq, reason: "busy" });
+      log(`[room ${roomId}] dropped segment ${seq} from ${clientId}: too many in flight`);
+      return;
+    }
+
+    segmentsInFlight++;
+    const durationMs = Number.isFinite(segment.durationMs) ? Math.max(0, segment.durationMs) : 0;
+    const segmentId = `${clientId.slice(0, 8)}-${seq}`;
+    void processSegment({ segmentId, speakerId: clientId, timestamp: Date.now() - durationMs, wav: audio })
+      .then((result) => {
+        if (!result.ok) {
+          log(`[room ${roomId}] segment ${segmentId} failed (${result.reason}): ${result.detail}`);
+          socket.emit("subtitle-error", { seq, reason: result.reason });
+          return;
+        }
+        log(
+          `[room ${roomId}] subtitle ${segmentId} engine=${result.subtitle.engine} audio=${result.audioSeconds}s ` +
+            `took=${result.processingMs}ms${result.subtitle.originalText ? "" : " (no speech)"}`,
+        );
+        // Empty text = silence, noise or a filtered hallucination: nothing to show.
+        if (result.subtitle.originalText) io.to(roomId).emit("subtitle", result.subtitle);
+      })
+      .finally(() => {
+        segmentsInFlight--;
+      });
+  });
 
   socket.on("disconnect", (reason) => {
     const { roomId, clientId } = socket.data;

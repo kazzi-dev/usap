@@ -72,6 +72,34 @@ export type JoinResponse =
     }
   | { ok: false; error: "room-full" | "invalid-request" };
 
+/** One chunk of speech, cut by voice activity detection in the speaker's browser. */
+export interface AudioSegment {
+  /** Increases by one per segment from the same speaker. */
+  seq: number;
+  /** Length of the speech. The server uses its own clock for timestamps, so
+   *  devices with wrong clocks can't mess up the subtitle order. */
+  durationMs: number;
+  /** 16 kHz mono 16-bit WAV file. Socket.IO sends it as binary, not JSON. */
+  audio: ArrayBuffer | Uint8Array;
+}
+
+/** A finished subtitle line, sent to everyone in the room (the speaker included). */
+export interface Subtitle {
+  segmentId: string;
+  speakerId: string;
+  originalText: string;
+  /** Text in the listener's language. Same as originalText until Stage 3. */
+  translatedText: string;
+  /** Detected language of originalText (ISO code like "en"), if known. */
+  lang: string | null;
+  /** When the speech started (ms since epoch). */
+  timestamp: number;
+  /** Which speech-to-text engine produced it. */
+  engine: "groq" | "local";
+}
+
+export type SubtitleErrorReason = "ai-unavailable" | "busy" | "invalid-audio";
+
 /** Events the browser sends to the server. */
 export interface ClientToServerEvents {
   "join-room": (req: JoinRequest, ack: (res: JoinResponse) => void) => void;
@@ -79,6 +107,7 @@ export interface ClientToServerEvents {
   signal: (msg: { to: string; payload: SignalPayload }) => void;
   "media-state": (media: MediaState) => void;
   "leave-room": () => void;
+  "audio-segment": (segment: AudioSegment) => void;
 }
 
 /** Events the server sends to the browser. */
@@ -93,6 +122,9 @@ export interface ServerToClientEvents {
   "peer-reconnected": (msg: { clientId: string }) => void;
   signal: (msg: { from: string; payload: SignalPayload }) => void;
   "media-state": (msg: { clientId: string; media: MediaState }) => void;
+  subtitle: (subtitle: Subtitle) => void;
+  /** Sent only to the speaker when one of their segments could not be transcribed. */
+  "subtitle-error": (msg: { seq: number; reason: SubtitleErrorReason }) => void;
 }
 
 /** Response of GET /ice-servers on the signaling server. */

@@ -12,6 +12,9 @@ const IDLE: CallState = {
   localMedia: { audio: false, video: false },
   remote: null,
   remoteStream: null,
+  subtitles: [],
+  captions: { enabled: true, status: "off" },
+  localSpeaking: false,
 };
 const noopSubscribe = () => () => {};
 const getIdle = () => IDLE;

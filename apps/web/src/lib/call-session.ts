@@ -1,7 +1,9 @@
-import type { MediaState, PeerInfo, SignalPayload } from "@usap/shared";
+import type { MediaState, PeerInfo, SignalPayload, Subtitle, SubtitleErrorReason } from "@usap/shared";
 import { io } from "socket.io-client";
 import { randomId } from "./ids";
 import { fetchIceServers, getSignalUrl, type SignalSocket } from "./signal";
+import { createFakeMicTrack, getFakeMicUrl } from "./subtitles/fake-mic";
+import { SpeechCapture } from "./subtitles/speech-capture";
 
 /*
  * CallSession owns everything about one 1-on-1 call:
@@ -20,6 +22,10 @@ import { fetchIceServers, getSignalUrl, type SignalSocket } from "./signal";
  *   4. Both trickle ICE candidates (possible network paths) through the server.
  *   5. Media flows peer-to-peer. The server is no longer involved, which is why
  *      a brief server outage does not drop an ongoing call.
+ *
+ * Subtitles (separate from the call media):
+ *   our mic -> VAD cuts speech segments -> WAV -> signal server -> AI service
+ *   -> "subtitle" event to everyone in the room (we see our own line too).
  */
 
 export type CallStatus =
@@ -38,6 +44,17 @@ export interface RemotePeer extends PeerInfo {
   signalConnected: boolean;
 }
 
+export interface SubtitleLine extends Subtitle {
+  speakerName: string;
+  /** True for lines we said ourselves. */
+  isOwn: boolean;
+  /** When this browser received the line (for fading old lines out). */
+  receivedAt: number;
+}
+
+/** off = turned off by the user; unavailable = no mic or the VAD failed to load. */
+export type CaptionStatus = "off" | "starting" | "on" | "unavailable";
+
 export interface CallState {
   status: CallStatus;
   /** Blocking problem (shown instead of the call, or as a banner while retrying). */
@@ -49,6 +66,12 @@ export interface CallState {
   localMedia: MediaState;
   remote: RemotePeer | null;
   remoteStream: MediaStream | null;
+  /** Recent subtitle lines from both people, oldest first. */
+  subtitles: SubtitleLine[];
+  /** Whether OUR speech is being captured for subtitles. */
+  captions: { enabled: boolean; status: CaptionStatus };
+  /** True while voice activity detection hears us talking. */
+  localSpeaking: boolean;
 }
 
 type Kind = "audio" | "video";
@@ -66,6 +89,21 @@ const VIDEO_CONSTRAINTS: MediaTrackConstraints = {
 
 /** How long to wait in "disconnected" before forcing an ICE restart. */
 const ICE_DISCONNECT_GRACE_MS = 4_000;
+/** How many subtitle lines to keep in memory (the full transcript is Stage 5). */
+const MAX_SUBTITLES = 50;
+/** Don't show subtitle errors more often than this. */
+const SUBTITLE_ERROR_COOLDOWN_MS = 15_000;
+
+function describeSubtitleError(reason: SubtitleErrorReason): string {
+  switch (reason) {
+    case "ai-unavailable":
+      return "Subtitles are unavailable right now: the AI service can't be reached.";
+    case "busy":
+      return "Subtitles are falling behind, so some lines were skipped.";
+    case "invalid-audio":
+      return "A piece of your speech couldn't be transcribed.";
+  }
+}
 
 function describeMediaError(err: unknown, what: string): string {
   const name = err instanceof DOMException ? err.name : "";
@@ -94,6 +132,9 @@ export class CallSession {
     localMedia: { audio: false, video: false },
     remote: null,
     remoteStream: null,
+    subtitles: [],
+    captions: { enabled: true, status: "off" },
+    localSpeaking: false,
   };
   private readonly listeners = new Set<() => void>();
 
@@ -111,6 +152,11 @@ export class CallSession {
   private ignoreOffer = false;
   private hasConnectedToPeer = false;
   private disconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // Subtitles
+  private capture: SpeechCapture | null = null;
+  private segmentSeq = 0;
+  private lastSubtitleErrorAt = 0;
 
   constructor(
     private readonly roomId: string,
@@ -164,10 +210,23 @@ export class CallSession {
       // Muting just stops sending sound; the mic stays open so unmuting is instant.
       track.enabled = !track.enabled;
       this.setLocalMedia({ audio: track.enabled });
+      // Muted means muted for subtitles too.
+      await (track.enabled ? this.capture?.resume() : this.capture?.pause());
       return;
     }
     const newTrack = await this.acquireTrack("audio");
-    if (newTrack) await this.useLocalTrack(newTrack);
+    if (newTrack) {
+      await this.useLocalTrack(newTrack);
+      if (this.joined) void this.startCaptions();
+    }
+  }
+
+  /** Turn subtitles of OUR speech on/off (off saves free-tier quota). */
+  toggleCaptions(): void {
+    const enabled = !this.state.captions.enabled;
+    this.set({ captions: { enabled, status: enabled ? "starting" : "off" } });
+    if (enabled) void this.startCaptions();
+    else void this.stopCaptions();
   }
 
   async toggleVideo(): Promise<void> {
@@ -199,6 +258,7 @@ export class CallSession {
 
   private teardown() {
     this.ended = true;
+    void this.stopCaptions();
     window.removeEventListener("pagehide", this.onPageHide);
     if (this.socket) {
       this.socket.emit("leave-room");
@@ -224,6 +284,18 @@ export class CallSession {
 
   private async acquireInitialMedia() {
     const gum = (c: MediaStreamConstraints) => navigator.mediaDevices.getUserMedia(c);
+
+    const fakeMicUrl = getFakeMicUrl();
+    if (fakeMicUrl) {
+      // Dev-only: play an audio file as "the microphone" to test subtitles without talking.
+      const camera = await gum({ video: VIDEO_CONSTRAINTS }).catch(() => null);
+      camera?.getTracks().forEach((t) => this.localStream.addTrack(t));
+      this.localStream.addTrack(await createFakeMicTrack(fakeMicUrl));
+      this.set({ notice: `Dev mode: using ${fakeMicUrl} as the microphone.` });
+      this.setLocalMedia({ audio: true, video: !!camera });
+      return;
+    }
+
     let stream: MediaStream | null = null;
     let notice: string | null = null;
     try {
@@ -343,6 +415,15 @@ export class CallSession {
     socket.on("media-state", ({ clientId, media }) => this.patchRemote(clientId, { media }));
 
     socket.on("signal", ({ from, payload }) => void this.handleSignal(from, payload));
+
+    socket.on("subtitle", (subtitle) => this.addSubtitle(subtitle));
+
+    socket.on("subtitle-error", ({ reason }) => {
+      const now = Date.now();
+      if (now - this.lastSubtitleErrorAt < SUBTITLE_ERROR_COOLDOWN_MS) return;
+      this.lastSubtitleErrorAt = now;
+      this.set({ notice: describeSubtitleError(reason) });
+    });
   }
 
   private async joinRoom() {
@@ -374,6 +455,7 @@ export class CallSession {
     }
 
     this.joined = true;
+    void this.startCaptions();
     const peer = res.peers[0] ?? null;
 
     if (!peer) {
@@ -418,6 +500,63 @@ export class CallSession {
     // Best effort: tell the server right away so the other person isn't left waiting.
     this.socket?.emit("leave-room");
   };
+
+  // ---------- Subtitles ----------
+
+  private async startCaptions() {
+    if (!this.state.captions.enabled || this.capture || this.ended) return;
+    if (!this.localTrack("audio")) {
+      this.set({ captions: { enabled: true, status: "unavailable" } });
+      return;
+    }
+
+    const capture = new SpeechCapture(() => this.localTrack("audio"), {
+      onSegment: (wav, durationMs) => this.sendSegment(wav, durationMs),
+      onSpeaking: (speaking) => {
+        if (this.state.localSpeaking !== speaking) this.set({ localSpeaking: speaking });
+      },
+    });
+    this.capture = capture;
+    this.set({ captions: { enabled: true, status: "starting" } });
+    try {
+      await capture.start();
+      if (this.capture !== capture) return; // turned off while loading
+      if (!this.state.localMedia.audio) await capture.pause();
+      this.set({ captions: { enabled: true, status: "on" } });
+    } catch (err) {
+      console.warn("[subtitles] could not start voice detection", err);
+      if (this.capture !== capture) return;
+      this.capture = null;
+      this.set({
+        captions: { enabled: true, status: "unavailable" },
+        notice: "Subtitles couldn't start on this device.",
+      });
+    }
+  }
+
+  private async stopCaptions() {
+    const capture = this.capture;
+    this.capture = null;
+    if (this.state.localSpeaking) this.set({ localSpeaking: false });
+    await capture?.destroy();
+  }
+
+  private sendSegment(wav: ArrayBuffer, durationMs: number) {
+    // Only transcribe when someone is there to read it: saves free-tier quota.
+    if (!this.joined || !this.state.remote || !this.socket?.connected) return;
+    this.segmentSeq += 1;
+    this.socket.emit("audio-segment", { seq: this.segmentSeq, durationMs, audio: wav });
+  }
+
+  private addSubtitle(subtitle: Subtitle) {
+    const isOwn = subtitle.speakerId === this.clientId;
+    const remote = this.state.remote;
+    const speakerName = isOwn ? this.name : remote?.clientId === subtitle.speakerId ? remote.name : "Guest";
+    const line: SubtitleLine = { ...subtitle, isOwn, speakerName, receivedAt: Date.now() };
+    // Segments are transcribed in parallel and can finish out of order; sort by when the speech started.
+    const subtitles = [...this.state.subtitles, line].sort((a, b) => a.timestamp - b.timestamp).slice(-MAX_SUBTITLES);
+    this.set({ subtitles });
+  }
 
   // ---------- WebRTC ----------
 
