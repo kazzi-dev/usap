@@ -26,3 +26,19 @@ String? parseRoomInput(String input) {
   code = code.toLowerCase();
   return _roomIdPattern.hasMatch(code) ? code : null;
 }
+
+/// The signaling server that belongs to an invite link, when it can be told
+/// from the link itself (otherwise null: keep the server from the settings).
+///  - https://192.168.1.10:3000/room/x (local dev web app, port 3000/3001)
+///      -> https://192.168.1.10:4000
+///  - https://some-words.trycloudflare.com/room/x (`npm run share`: one
+///      address for everything) -> https://some-words.trycloudflare.com
+String? signalUrlFromInvite(String input) {
+  final uri = Uri.tryParse(input.trim());
+  if (uri == null || !uri.hasScheme || uri.host.isEmpty) return null;
+  if (uri.hasPort && (uri.port == 3000 || uri.port == 3001)) {
+    return Uri(scheme: uri.scheme, host: uri.host, port: 4000).origin;
+  }
+  if (uri.host.endsWith('.trycloudflare.com')) return uri.origin;
+  return null;
+}

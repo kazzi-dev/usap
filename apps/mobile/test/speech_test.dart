@@ -116,6 +116,14 @@ void main() {
     expect(pcmBytesToSamples(wav.sublist(44)), [0, 1000, -1000]);
   });
 
+  test('signalUrlFromInvite finds the server for share and dev links', () {
+    expect(signalUrlFromInvite('https://some-words.trycloudflare.com/room/abc-defg-hij'),
+        'https://some-words.trycloudflare.com');
+    expect(signalUrlFromInvite('https://192.168.254.116:3001/room/abc-defg-hij'), 'https://192.168.254.116:4000');
+    expect(signalUrlFromInvite('abc-defg-hij'), isNull, reason: 'a bare code keeps the configured server');
+    expect(signalUrlFromInvite('https://usap.example.com/room/abc-defg-hij'), isNull);
+  });
+
   test('parseRoomInput accepts links and codes', () {
     expect(parseRoomInput('https://192.168.1.10:3000/room/abc-defg-hij'), 'abc-defg-hij');
     expect(parseRoomInput('  ABC-defg-hij '), 'abc-defg-hij');

@@ -207,6 +207,10 @@ class _CallScreenState extends State<CallScreen> {
 
   static String? _statusMessage(CallSession s) {
     final other = s.remote?.name ?? 'the other person';
+    if (s.connectTrouble && (s.status == CallStatus.connecting || s.status == CallStatus.reconnecting)) {
+      return "Video can't connect between your network and $other's (common on mobile data). "
+          'Subtitles still work. Trying again… A relay (TURN) server fixes this.';
+    }
     return switch (s.status) {
       CallStatus.starting => 'Starting camera and joining…',
       CallStatus.waiting => 'Waiting for someone to join. Share the invite link.',

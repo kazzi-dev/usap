@@ -7,11 +7,13 @@ import type {
   SocketAuth,
   Subtitle,
   SubtitleErrorReason,
+  WebRtcReport,
 } from "@usap/shared";
 import { io } from "socket.io-client";
 import { randomId } from "./ids";
 import { getSession } from "./session";
 import { fetchIceServers, getSignalUrl, type SignalSocket } from "./signal";
+import { describeRoute, hasTurnServer } from "./webrtc-route";
 import { createFakeMicTrack, getFakeMicUrl } from "./subtitles/fake-mic";
 import { SpeechCapture } from "./subtitles/speech-capture";
 
@@ -86,6 +88,8 @@ export interface CallState {
   language: LanguageCode;
   /** Whether this call's transcript is being saved (someone in it is logged in). */
   recording: RecordingState;
+  /** Video isn't connecting (likely networks that block direct connections). */
+  connectTrouble: boolean;
 }
 
 type Kind = "audio" | "video";
@@ -103,6 +107,8 @@ const VIDEO_CONSTRAINTS: MediaTrackConstraints = {
 
 /** How long to wait in "disconnected" before forcing an ICE restart. */
 const ICE_DISCONNECT_GRACE_MS = 4_000;
+/** If video isn't connected after this long, tell the user what's going on. */
+const SLOW_CONNECT_MS = 15_000;
 /** How many subtitle lines to keep in memory (the full transcript is Stage 5). */
 const MAX_SUBTITLES = 50;
 /** Don't show subtitle errors more often than this. */
@@ -151,6 +157,7 @@ export class CallSession {
     localSpeaking: false,
     language: "en",
     recording: { recording: false, callId: null },
+    connectTrouble: false,
   };
   private readonly listeners = new Set<() => void>();
 
@@ -168,6 +175,9 @@ export class CallSession {
   private ignoreOffer = false;
   private hasConnectedToPeer = false;
   private disconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private slowTimer: ReturnType<typeof setTimeout> | null = null;
+  /** ?relay=1 forces all media through TURN: a way to test the relay from one network. */
+  private relayOnly = false;
 
   // Subtitles
   private audioContext: AudioContext | null = null;
@@ -227,6 +237,10 @@ export class CallSession {
 
     const signalUrl = getSignalUrl();
     this.iceServers = await fetchIceServers(signalUrl);
+    this.relayOnly = new URLSearchParams(window.location.search).get("relay") === "1";
+    if (this.relayOnly && !hasTurnServer(this.iceServers)) {
+      this.set({ notice: "Relay-only test mode, but the server has no TURN relay configured: video can't connect." });
+    }
     if (this.ended) return;
 
     window.addEventListener("pagehide", this.onPageHide);
@@ -654,7 +668,15 @@ export class CallSession {
 
   private createPeerConnection(connectionId: string): RTCPeerConnection {
     this.closePeerConnection();
-    const pc = new RTCPeerConnection({ iceServers: this.iceServers });
+    const pc = new RTCPeerConnection({
+      iceServers: this.iceServers,
+      iceTransportPolicy: this.relayOnly ? "relay" : "all",
+    });
+    this.slowTimer = setTimeout(() => {
+      if (this.pc !== pc || pc.connectionState === "connected") return;
+      this.set({ connectTrouble: true });
+      this.reportWebRtc({ state: "slow" });
+    }, SLOW_CONNECT_MS);
     this.pc = pc;
     this.connectionId = connectionId;
     this.makingOffer = false;
@@ -750,6 +772,10 @@ export class CallSession {
     switch (pc.connectionState) {
       case "connected":
         this.hasConnectedToPeer = true;
+        if (this.slowTimer) clearTimeout(this.slowTimer);
+        this.slowTimer = null;
+        if (this.state.connectTrouble) this.set({ connectTrouble: false });
+        void describeRoute(pc).then((route) => this.reportWebRtc({ state: "connected", route }));
         break;
       case "disconnected":
         // Often recovers by itself (e.g. Wi-Fi hiccup). If not, find a new network path.
@@ -758,10 +784,19 @@ export class CallSession {
         }, ICE_DISCONNECT_GRACE_MS);
         break;
       case "failed":
+        this.set({ connectTrouble: true });
+        this.reportWebRtc({ state: "failed" });
         this.restartIce();
         break;
     }
     this.updateStatus();
+  }
+
+  private reportWebRtc(report: Omit<WebRtcReport, "hasTurn">) {
+    console.info(`[webrtc] ${report.state}${report.route ? ` via ${report.route}` : ""}`);
+    if (this.socket?.connected) {
+      this.socket.emit("webrtc-state", { ...report, hasTurn: hasTurnServer(this.iceServers) });
+    }
   }
 
   /**
@@ -789,6 +824,9 @@ export class CallSession {
   private closePeerConnection() {
     if (this.disconnectTimer) clearTimeout(this.disconnectTimer);
     this.disconnectTimer = null;
+    if (this.slowTimer) clearTimeout(this.slowTimer);
+    this.slowTimer = null;
+    if (this.state.connectTrouble) this.set({ connectTrouble: false });
     if (this.pc) {
       this.pc.onnegotiationneeded = null;
       this.pc.onicecandidate = null;

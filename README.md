@@ -155,6 +155,14 @@ friend ─https─▶ Cloudflare ─tunnel─▶ cloudflared ─▶ share proxy 
   when done; the link changes every time. `--no-build` reuses the last build.
 - Without TURN, calls between two home Wi-Fi networks usually connect; mobile data
   (carrier NAT) often needs the TURN relay below.
+- **Diagnosing "no video":** each client reports how its video connected, and the
+  signal server logs it: `video connected via lan | internet | relay`, or
+  `video slow` / `failed` with whether a TURN relay was available. When video
+  can't connect after 15 s, both people see an explanation (subtitles keep working).
+- **Testing TURN from one network:** add `?relay=1` to a room link. That browser then
+  sends media only through the TURN relay, proving the relay works.
+- The Android app accepts these share links too: paste the invite link and it switches
+  to that server automatically.
 
 ### TURN (optional, for calls across different networks)
 

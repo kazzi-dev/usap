@@ -150,6 +150,15 @@ export function registerSockets(io: UsapServer, { rooms, auth, recorder, log }: 
       socket.to(roomId).emit("language-changed", { clientId, lang });
     });
 
+    // Diagnostics only: lets the log answer "why was there no video?"
+    socket.on("webrtc-state", (report) => {
+      const { roomId, clientId } = socket.data;
+      if (!roomId || !clientId || typeof report?.state !== "string") return;
+      const route = report.route ? ` via ${String(report.route).slice(0, 16)}` : "";
+      const turn = report.hasTurn ? "TURN available" : "no TURN configured";
+      log(`[room ${roomId}] ${clientId} video ${String(report.state).slice(0, 16)}${route} (${turn})`);
+    });
+
     // ---------- Subtitles: speech segment -> AI service -> everyone in the room ----------
     let segmentsInFlight = 0;
 

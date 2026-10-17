@@ -122,6 +122,8 @@ export interface ClientToServerEvents {
   "audio-segment": (segment: AudioSegment) => void;
   /** Change my language mid-call. */
   "set-language": (lang: LanguageCode) => void;
+  /** Diagnostics: how my video connection is doing (logged by the server). */
+  "webrtc-state": (report: WebRtcReport) => void;
 }
 
 /** Events the server sends to the browser. */
@@ -217,4 +219,21 @@ export interface ApiError {
   error: string;
   /** Per-field problems for form validation errors. */
   fields?: Record<string, string>;
+}
+
+/**
+ * How the peer-to-peer media connection is doing, reported by each client so
+ * the server log can show why video did or didn't work.
+ */
+export interface WebRtcReport {
+  state: "connected" | "failed" | "slow";
+  /**
+   * The network path in use once connected:
+   * - "lan": both devices on the same network
+   * - "internet": direct across the internet (via STUN-discovered addresses)
+   * - "relay": through a TURN server
+   */
+  route?: "lan" | "internet" | "relay" | "unknown";
+  /** Which ICE servers the client had: did it have a TURN relay to fall back on? */
+  hasTurn: boolean;
 }

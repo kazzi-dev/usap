@@ -47,7 +47,15 @@ class _HomeScreenState extends State<HomeScreen> {
   void _join() {
     final roomId = parseRoomInput(_room.text);
     setState(() => _roomError = roomId == null ? 'Paste an invite link or a code like abc-defg-hij' : null);
-    if (roomId != null) _open(roomId);
+    if (roomId == null) return;
+    // An invite link can tell us which server the call is on (e.g. a public
+    // npm run share link), so the user doesn't have to change it by hand.
+    final server = signalUrlFromInvite(_room.text);
+    if (server != null && server != _server.text.trim()) {
+      setState(() => _server.text = server);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Using the server from the link: $server')));
+    }
+    _open(roomId);
   }
 
   @override

@@ -10,6 +10,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../models/protocol.dart';
 import '../speech/speech_capture.dart';
 import '../util/ids.dart';
+import 'webrtc_route.dart';
 
 /// Same states as the web app (apps/web/src/lib/call-session.ts).
 enum CallStatus { idle, starting, waiting, connecting, connected, reconnecting, roomFull, ended, error }
@@ -86,6 +87,10 @@ class CallSession extends ChangeNotifier {
 
   /// True while this call's transcript is being saved (someone in it is logged in).
   bool get recording => _recording;
+
+  /// Video isn't connecting (likely networks that block direct connections).
+  bool get connectTrouble => _connectTrouble;
+  bool _connectTrouble = false;
   bool _recording = false;
 
   // ---------- Internals ----------
@@ -124,6 +129,8 @@ class CallSession extends ChangeNotifier {
 
   static const _maxSubtitles = 50;
   static const _iceDisconnectGrace = Duration(seconds: 4);
+  static const _slowConnect = Duration(seconds: 15);
+  Timer? _slowTimer;
 
   void _notify() {
     if (!_disposed) notifyListeners();
@@ -518,6 +525,13 @@ class CallSession extends ChangeNotifier {
   Future<RTCPeerConnection> _createPeerConnection(String connectionId) async {
     await _closePeerConnection();
     final pc = await createPeerConnection({'iceServers': _iceServers, 'sdpSemantics': 'unified-plan'});
+    _slowTimer?.cancel();
+    _slowTimer = Timer(_slowConnect, () {
+      if (_pc != pc || pc.connectionState == RTCPeerConnectionState.RTCPeerConnectionStateConnected) return;
+      _connectTrouble = true;
+      _reportWebRtc('slow');
+      _notify();
+    });
     _pc = pc;
     _connectionId = connectionId;
     _makingOffer = false;
@@ -643,6 +657,9 @@ class CallSession extends ChangeNotifier {
     switch (state) {
       case RTCPeerConnectionState.RTCPeerConnectionStateConnected:
         _hasConnectedToPeer = true;
+        _slowTimer?.cancel();
+        _connectTrouble = false;
+        describeRoute(pc).then((route) => _reportWebRtc('connected', route));
       case RTCPeerConnectionState.RTCPeerConnectionStateDisconnected:
         // Often recovers by itself; if not, look for a new network path.
         _disconnectTimer = Timer(_iceDisconnectGrace, () {
@@ -651,6 +668,8 @@ class CallSession extends ChangeNotifier {
           }
         });
       case RTCPeerConnectionState.RTCPeerConnectionStateFailed:
+        _connectTrouble = true;
+        _reportWebRtc('failed');
         _restartIce();
       default:
         break;
@@ -682,8 +701,17 @@ class CallSession extends ChangeNotifier {
     }
   }
 
+  void _reportWebRtc(String state, [String? route]) {
+    debugPrint('[webrtc] $state${route != null ? ' via $route' : ''}');
+    final socket = _socket;
+    if (socket == null || !socket.connected) return;
+    socket.emit('webrtc-state', {'state': state, 'route': ?route, 'hasTurn': hasTurnServer(_iceServers)});
+  }
+
   Future<void> _closePeerConnection() async {
     _disconnectTimer?.cancel();
+    _slowTimer?.cancel();
+    _connectTrouble = false;
     final pc = _pc;
     _pc = null;
     _connectionId = null;

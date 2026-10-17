@@ -163,6 +163,12 @@ function CallOver({ state, onRejoin }: { state: CallState; onRejoin: () => void 
 
 function statusMessage(state: CallState): string | null {
   const other = state.remote?.name ?? "the other person";
+  if (state.connectTrouble && (state.status === "connecting" || state.status === "reconnecting")) {
+    return (
+      `Video can't connect between your network and ${other}'s (common on mobile data). ` +
+      "Subtitles still work. Trying again… A relay (TURN) server fixes this."
+    );
+  }
   switch (state.status) {
     case "starting":
       return "Starting camera and joining…";
