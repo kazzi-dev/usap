@@ -11,8 +11,7 @@ export function getFakeMicUrl(): string | null {
   return url && url.startsWith("/") && !url.startsWith("//") ? url : null;
 }
 
-export async function createFakeMicTrack(url: string): Promise<MediaStreamTrack> {
-  const ctx = new AudioContext();
+export async function createFakeMicTrack(url: string, ctx: AudioContext): Promise<MediaStreamTrack> {
   const res = await fetch(url);
   const speech = await ctx.decodeAudioData(await res.arrayBuffer());
 

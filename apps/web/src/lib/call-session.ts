@@ -154,6 +154,7 @@ export class CallSession {
   private disconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Subtitles
+  private audioContext: AudioContext | null = null;
   private capture: SpeechCapture | null = null;
   private segmentSeq = 0;
   private lastSubtitleErrorAt = 0;
@@ -192,6 +193,14 @@ export class CallSession {
       });
       return;
     }
+
+    // Must happen before the first `await`, while we're still inside the
+    // "Join" click: browsers (iPhone Safari especially) only let audio start
+    // during a user gesture. Created later, it stays "suspended" and the voice
+    // detector silently hears nothing.
+    this.audioContext = new AudioContext();
+    void this.audioContext.resume();
+    document.addEventListener("pointerdown", this.resumeAudio);
 
     await this.acquireInitialMedia();
     if (this.ended) return;
@@ -259,6 +268,9 @@ export class CallSession {
   private teardown() {
     this.ended = true;
     void this.stopCaptions();
+    document.removeEventListener("pointerdown", this.resumeAudio);
+    void this.audioContext?.close();
+    this.audioContext = null;
     window.removeEventListener("pagehide", this.onPageHide);
     if (this.socket) {
       this.socket.emit("leave-room");
@@ -290,7 +302,7 @@ export class CallSession {
       // Dev-only: play an audio file as "the microphone" to test subtitles without talking.
       const camera = await gum({ video: VIDEO_CONSTRAINTS }).catch(() => null);
       camera?.getTracks().forEach((t) => this.localStream.addTrack(t));
-      this.localStream.addTrack(await createFakeMicTrack(fakeMicUrl));
+      this.localStream.addTrack(await createFakeMicTrack(fakeMicUrl, this.audioContext ?? new AudioContext()));
       this.set({ notice: `Dev mode: using ${fakeMicUrl} as the microphone.` });
       this.setLocalMedia({ audio: true, video: !!camera });
       return;
@@ -510,7 +522,7 @@ export class CallSession {
       return;
     }
 
-    const capture = new SpeechCapture(() => this.localTrack("audio"), {
+    const capture = new SpeechCapture(() => this.localTrack("audio"), this.audioContext, {
       onSegment: (wav, durationMs) => this.sendSegment(wav, durationMs),
       onSpeaking: (speaking) => {
         if (this.state.localSpeaking !== speaking) this.set({ localSpeaking: speaking });
@@ -523,6 +535,9 @@ export class CallSession {
       if (this.capture !== capture) return; // turned off while loading
       if (!this.state.localMedia.audio) await capture.pause();
       this.set({ captions: { enabled: true, status: "on" } });
+      if (this.audioContext?.state !== "running") {
+        this.set({ notice: "Tap anywhere on the screen to turn on subtitles." });
+      }
     } catch (err) {
       console.warn("[subtitles] could not start voice detection", err);
       if (this.capture !== capture) return;
@@ -541,10 +556,23 @@ export class CallSession {
     await capture?.destroy();
   }
 
+  /** Runs on every tap: un-suspends audio if the browser paused it. */
+  private resumeAudio = () => {
+    const ctx = this.audioContext;
+    if (!ctx || ctx.state === "running") return;
+    void ctx.resume().then(() => {
+      if (ctx.state === "running" && this.state.notice?.startsWith("Tap anywhere")) this.set({ notice: null });
+    });
+  };
+
   private sendSegment(wav: ArrayBuffer, durationMs: number) {
     // Only transcribe when someone is there to read it: saves free-tier quota.
-    if (!this.joined || !this.state.remote || !this.socket?.connected) return;
+    if (!this.joined || !this.state.remote || !this.socket?.connected) {
+      console.info(`[subtitles] skipped a ${durationMs} ms segment: nobody else in the call or offline`);
+      return;
+    }
     this.segmentSeq += 1;
+    console.info(`[subtitles] sending segment ${this.segmentSeq} (${durationMs} ms)`);
     this.socket.emit("audio-segment", { seq: this.segmentSeq, durationMs, audio: wav });
   }
 

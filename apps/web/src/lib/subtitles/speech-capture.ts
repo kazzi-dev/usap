@@ -26,6 +26,8 @@ export class SpeechCapture {
 
   constructor(
     private readonly getMicTrack: () => MediaStreamTrack | null,
+    /** Created during the Join click so the browser lets it run (see CallSession.start). */
+    private readonly audioContext: AudioContext | null,
     private readonly events: SpeechCaptureEvents,
   ) {
     this.merger = new SegmentMerger((audio) => {
@@ -51,6 +53,7 @@ export class SpeechCapture {
       // Files copied to public/vad by scripts/copy-vad-assets.mjs.
       baseAssetPath: "/vad/",
       onnxWASMBasePath: "/vad/",
+      audioContext: this.audioContext ?? undefined,
       getStream: cloneMicStream,
       resumeStream: cloneMicStream,
       pauseStream: async (stream) => stream.getTracks().forEach((t) => t.stop()),
@@ -67,11 +70,13 @@ export class SpeechCapture {
       onVADMisfire: () => this.events.onSpeaking(false),
       onSpeechEnd: (audio) => {
         this.events.onSpeaking(false);
+        console.info(`[subtitles] heard ${Math.round(samplesToMs(audio.length))} ms of speech`);
         this.merger.push(audio);
       },
       startOnLoad: true,
     });
     if (this.destroyed) await this.vad.destroy();
+    console.info(`[subtitles] voice detection ready (audio: ${this.audioContext?.state ?? "own context"})`);
   }
 
   /** Stop listening (mic muted). Anything already said is still sent. */
