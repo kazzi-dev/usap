@@ -157,7 +157,10 @@ io.on("connection", (socket) => {
     socket.to(roomId).emit("media-state", { clientId, media: clean });
   });
 
-  socket.on("leave-room", leaveCurrentRoom);
+  socket.on("leave-room", (ack) => {
+    leaveCurrentRoom();
+    if (typeof ack === "function") ack();
+  });
 
   socket.on("set-language", (lang) => {
     const { roomId, clientId } = socket.data;

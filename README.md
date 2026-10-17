@@ -8,15 +8,16 @@ the other person's screen in their language.
 Built entirely on free tools: WebRTC, Socket.IO, Groq's free tier, and local
 open-source models.
 
-> **Status: Stage 3 of 6.** 1-on-1 video calls with live translated
-> subtitles. The mobile app, transcripts and summaries come in the next stages.
+> **Status: Stage 4 of 6.** 1-on-1 video calls with live translated
+> subtitles, in the browser and in an Android app. Transcripts and summaries
+> come next.
 
 | Stage | What | Status |
 | ----- | ---- | ------ |
 | 1 | 1-on-1 browser video call (rooms, toggles, reconnect) | ✅ |
 | 2 | Live same-language subtitles (VAD, Groq Whisper, rate limiter, local fallback) | ✅ |
 | 3 | Translation (NLLB-200) with per-user language | ✅ |
-| 4 | Flutter app joining the same calls | ⏳ |
+| 4 | Flutter app joining the same calls | ✅ |
 | 5 | Postgres transcripts, AI summary, call history, auth | ⏳ |
 | 6 | Tests, error states, deployment guide | ⏳ |
 
@@ -27,7 +28,7 @@ flowchart LR
     subgraph A[Browser A]
       UI_A[Call UI] --- VAD_A[VAD<br/>Silero in WASM]
     end
-    B[Browser B]
+    B[Browser or<br/>Android app]
     S[Signal server<br/>Node + Socket.IO]
     AI[AI service<br/>Python + FastAPI]
     G[(Groq Whisper<br/>free tier)]
@@ -58,7 +59,8 @@ flowchart LR
 usap/
   apps/web        Next.js + TypeScript + Tailwind call UI
   apps/signal     Node + TypeScript + Socket.IO signaling server
-  apps/ai         Python + FastAPI speech-to-text service
+  apps/ai         Python + FastAPI speech-to-text + translation service
+  apps/mobile     Flutter Android app (joins the same calls as the web app)
   packages/shared Type-only "contract" for the Socket.IO events (used by web + signal)
   scripts/        setup/run helpers (dev certificate, Python venv, VAD assets)
   .env.example    Every setting, no secrets
@@ -66,7 +68,7 @@ usap/
 
 ## Setup
 
-Requirements: **Node 22+** and **Python 3.12**.
+Requirements: **Node 22+** and **Python 3.12**. For the Android app: **Flutter 3.x** and Android Studio (for the Android SDK).
 
 ```bash
 npm install
@@ -129,6 +131,44 @@ STUN alone is enough on the same Wi-Fi. For calls across strict NATs/mobile
 data, create a free [Metered](https://www.metered.ca/stun-turn) account and put
 `METERED_APP_NAME` + `METERED_API_KEY` (or static `TURN_*` values) in `.env`. The
 signal server hands these to browsers at runtime via `GET /ice-servers`.
+
+## Android app (apps/mobile)
+
+A Flutter app that speaks exactly the same Socket.IO protocol as the web app,
+so a phone-app user and a browser user can call each other.
+
+**Build and install** (Android phone with USB debugging on, connected by USB):
+
+```bash
+npm run dev:https                      # the servers, in one terminal
+npm run build:mobile -- --install      # builds the APK and installs it on the phone
+```
+
+`build:mobile` bakes this laptop's Wi-Fi address in as the default server
+(`https://<laptop-ip>:4000`). It can be changed on the app's home screen under
+**Server**. The APK is at `apps/mobile/build/app/outputs/flutter-apk/app-debug.apk`
+if you'd rather copy it to the phone yourself.
+
+How it differs from the web app:
+
+| | Web | Android app |
+| --- | --- | --- |
+| WebRTC | Browser API | `flutter_webrtc` (same libwebrtc underneath) |
+| Voice detection | Silero neural net (WASM) | Energy-based VAD in pure Dart (`lib/speech/energy_vad.dart`) |
+| Mic capture for subtitles | Cloned mic track | `record` package, "voice communication" source (shared with WebRTC, echo-cancelled) |
+| Dev HTTPS certificate | Accept the warning once | Debug builds trust it, for the configured server host only |
+| Extras | | Speakerphone on, screen kept awake, front/back camera switch |
+
+The energy VAD compares each 30 ms frame's loudness (RMS) with a running
+estimate of the background noise. It needs no model and almost no CPU; loud
+non-speech sounds can slip through, and Whisper's no-speech filter on the
+server catches most of those.
+
+Signaling messages are processed strictly in order (a Future chain), because
+`flutter_webrtc` calls cross into native code asynchronously and an ICE
+candidate must never be applied before its offer.
+
+Tests: `npm run test:mobile` (VAD, segment merging, WAV encoding, link parsing).
 
 ## How a call connects
 
@@ -245,6 +285,8 @@ curl -X POST http://127.0.0.1:8000/translate -H "Content-Type: application/json"
 | `npm run dev` | Signal (:4000) + web (:3000) + AI (:8000) over HTTP |
 | `npm run dev:https` | Same, over HTTPS for LAN/phone testing |
 | `npm run test:ai` | Python unit tests (rate limiter, languages, sentence splitting) |
+| `npm run build:mobile` | Build the Android debug APK (`-- --install` to install over USB) |
+| `npm run test:mobile` | Flutter unit tests |
 | `npm run typecheck` | TypeScript checks for web + signal |
 | `npm run lint` | ESLint for the web app |
 | `npm run build` | Production build of web + signal |

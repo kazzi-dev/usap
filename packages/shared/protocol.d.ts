@@ -117,7 +117,8 @@ export interface ClientToServerEvents {
   /** Forward a WebRTC offer/answer/ICE candidate to another peer in the room. */
   signal: (msg: { to: string; payload: SignalPayload }) => void;
   "media-state": (media: MediaState) => void;
-  "leave-room": () => void;
+  /** The optional ack lets a client wait until the server got it before closing the socket. */
+  "leave-room": (ack?: () => void) => void;
   "audio-segment": (segment: AudioSegment) => void;
   /** Change my language mid-call. */
   "set-language": (lang: LanguageCode) => void;

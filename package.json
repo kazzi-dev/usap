@@ -15,7 +15,9 @@
     "test:ai": "node scripts/run-ai.mjs --test",
     "build": "npm run build -w apps/signal && npm run build -w apps/web",
     "typecheck": "npm run typecheck -w apps/signal && npm run typecheck -w apps/web",
-    "lint": "npm run lint -w apps/web"
+    "lint": "npm run lint -w apps/web",
+    "build:mobile": "node scripts/build-mobile.mjs",
+    "test:mobile": "cd apps/mobile && flutter test"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
