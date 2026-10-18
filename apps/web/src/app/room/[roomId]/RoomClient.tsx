@@ -6,6 +6,9 @@ import { useParams } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { CamIcon, CamOffIcon, LinkIcon, MicIcon, MicOffIcon, PhoneOffIcon } from "@/components/icons";
 import { LanguageSelect } from "@/components/LanguageSelect";
+import { Aurora } from "@/components/brand/Aurora";
+import { Logo } from "@/components/brand/Logo";
+import { OnboardingGate } from "@/components/onboarding/OnboardingGate";
 import { SubtitleOverlay } from "@/components/SubtitleOverlay";
 import { VideoTile } from "@/components/VideoTile";
 import { CallSession, type CallState } from "@/lib/call-session";
@@ -73,17 +76,26 @@ function PreJoin(props: {
   onJoin: () => void;
 }) {
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-neutral-950 px-4 text-white">
+    <main className="relative isolate flex min-h-dvh items-center justify-center overflow-hidden px-4 py-10 text-white">
+      <Aurora />
+      {/* First time here (e.g. opened an invite link)? Explain Usap before joining. */}
+      <OnboardingGate />
       <form
-        className="w-full max-w-sm"
+        className="animate-fade-up w-full max-w-md rounded-3xl border border-white/10 bg-ink-900/75 p-6 shadow-2xl backdrop-blur sm:p-8"
         onSubmit={(e) => {
           e.preventDefault();
           props.onJoin();
         }}
       >
-        <p className="text-sm text-neutral-400">Joining room</p>
-        <h1 className="font-mono text-2xl">{props.roomId}</h1>
-        <label className="mt-6 block text-sm text-neutral-300" htmlFor="name">
+        <Link href="/" className="inline-block" aria-label="Usap home">
+          <Logo />
+        </Link>
+        <p className="mt-6 text-sm text-slate-400">You&apos;re joining</p>
+        <h1 className="mt-1 inline-flex rounded-xl bg-white/5 px-3 py-1.5 font-mono text-xl tracking-wide ring-1 ring-white/10">
+          {props.roomId}
+        </h1>
+
+        <label className="mt-6 block text-sm font-medium text-slate-200" htmlFor="name">
           Your name
         </label>
         <input
@@ -93,21 +105,31 @@ function PreJoin(props: {
           maxLength={40}
           placeholder="e.g. Ana"
           autoFocus
-          className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-3 outline-none focus:border-sky-500"
+          className="mt-1.5 w-full rounded-xl border border-white/10 bg-ink-800 px-3 py-3 outline-none transition focus:border-sky-400"
         />
-        <label className="mt-4 block text-sm text-neutral-300" htmlFor="language">
-          Language you speak (subtitles will be shown in it too)
+        <label className="mt-4 block text-sm font-medium text-slate-200" htmlFor="language">
+          Language you speak
         </label>
         <LanguageSelect
           id="language"
           value={props.language}
           onChange={props.onLanguageChange}
-          className="mt-1 w-full px-3 py-3"
+          className="mt-1.5 w-full rounded-xl px-3 py-3"
         />
-        <button type="submit" className="mt-4 w-full rounded-lg bg-sky-600 px-4 py-3 font-medium hover:bg-sky-500">
+        <p className="mt-1.5 text-xs text-slate-500">Subtitles will be shown to you in this language too.</p>
+
+        <button
+          type="submit"
+          className="bg-brand animate-gradient mt-6 w-full rounded-2xl px-4 py-3.5 font-semibold shadow-lg shadow-violet-900/40 transition hover:brightness-110"
+        >
           Join call
         </button>
-        <p className="mt-3 text-xs text-neutral-500">Your browser will ask for camera and microphone access.</p>
+
+        <ul className="mt-5 space-y-1.5 text-xs text-slate-400">
+          <li>• Your browser will ask for camera and microphone access.</li>
+          <li>• Speak normally: subtitles appear for both of you, translated.</li>
+          <li>• You can mute, turn off the camera, or change language anytime.</li>
+        </ul>
       </form>
     </main>
   );

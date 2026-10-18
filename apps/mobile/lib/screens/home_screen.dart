@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../services/settings.dart';
+import '../theme.dart';
 import '../util/ids.dart';
+import '../widgets/brand.dart';
 import '../widgets/language_dropdown.dart';
+import '../widgets/subtitle_demo.dart';
 import 'call_screen.dart';
+import 'onboarding_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.settings});
@@ -58,63 +62,153 @@ class _HomeScreenState extends State<HomeScreen> {
     _open(roomId);
   }
 
+  /// Settings sheet: the server address, and the intro again.
+  void _openSettings() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: UsapColors.ink900,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + MediaQuery.viewInsetsOf(sheetContext).bottom),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Settings', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _server,
+              keyboardType: TextInputType.url,
+              decoration: const InputDecoration(
+                labelText: 'Server',
+                helperText: 'Set automatically when you paste an invite link.',
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.auto_awesome, color: UsapColors.sky),
+              title: const Text('Replay the intro'),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => OnboardingScreen(settings: widget.settings, replay: true),
+                ));
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
-            const SizedBox(height: 24),
-            Text('Usap', style: Theme.of(context).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            const Text('Video calls with live translated subtitles.', style: TextStyle(color: Colors.white60)),
-            const SizedBox(height: 32),
-            TextField(
-              controller: _name,
-              maxLength: 40,
-              decoration: const InputDecoration(labelText: 'Your name', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 8),
-            const Text('Language you speak (subtitles will be shown in it too)',
-                style: TextStyle(color: Colors.white70)),
-            LanguageDropdown(value: _language, onChanged: (code) => setState(() => _language = code)),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: () => _open(createRoomId()),
-              style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
-              child: const Text('Start a new call'),
-            ),
-            const SizedBox(height: 24),
-            TextField(
-              controller: _room,
-              decoration: InputDecoration(
-                labelText: 'Invite link or room code',
-                border: const OutlineInputBorder(),
-                errorText: _roomError,
-                suffixIcon: IconButton(icon: const Icon(Icons.login), onPressed: _join, tooltip: 'Join'),
-              ),
-              onSubmitted: (_) => _join(),
-            ),
-            const SizedBox(height: 32),
-            ExpansionTile(
-              title: const Text('Server'),
-              subtitle: Text(_server.text, style: const TextStyle(color: Colors.white54)),
-              tilePadding: EdgeInsets.zero,
-              children: [
-                TextField(
-                  controller: _server,
-                  keyboardType: TextInputType.url,
-                  decoration: const InputDecoration(
-                    labelText: 'Signaling server URL',
-                    helperText: 'Your laptop running npm run dev:https, e.g. https://192.168.1.10:4000',
-                    border: OutlineInputBorder(),
+      body: AuroraBackground(
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+            children: [
+              Row(
+                children: [
+                  const Logo(),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: _openSettings,
+                    tooltip: 'Settings',
+                    icon: const Icon(Icons.tune_rounded, color: UsapColors.muted),
                   ),
-                  onChanged: (_) => setState(() {}),
+                ],
+              ),
+              const SizedBox(height: 22),
+              const Text('Talk to anyone.',
+                  style: TextStyle(fontSize: 34, fontWeight: FontWeight.w700, color: Colors.white, height: 1.1)),
+              const GradientText('Read them in your language.',
+                  style: TextStyle(fontSize: 34, fontWeight: FontWeight.w700, height: 1.1)),
+              const SizedBox(height: 12),
+              const Text(
+                'Live subtitles, translated for each person, in English, Tagalog, Bisaya and Japanese.',
+                style: TextStyle(fontSize: 15, height: 1.4, color: Color(0xFFCBD5E1)),
+              ),
+              const SizedBox(height: 20),
+              const SubtitleDemo(),
+              const SizedBox(height: 16),
+
+              // Start / join card
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: UsapColors.ink900.withValues(alpha: 0.85),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
                 ),
-              ],
-            ),
-          ],
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(
+                      controller: _name,
+                      maxLength: 40,
+                      textCapitalization: TextCapitalization.words,
+                      decoration: const InputDecoration(labelText: 'Your name', counterText: '', prefixIcon: Icon(Icons.person_outline)),
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: UsapColors.ink800,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.translate_rounded, color: UsapColors.muted, size: 22),
+                          const SizedBox(width: 12),
+                          const Text('I speak', style: TextStyle(color: UsapColors.muted)),
+                          const Spacer(),
+                          LanguageDropdown(
+                            value: _language,
+                            compact: true,
+                            onChanged: (code) => setState(() => _language = code),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    GradientButton(
+                      label: 'Start a new call',
+                      icon: Icons.arrow_forward_rounded,
+                      onPressed: () => _open(createRoomId()),
+                    ),
+                    const SizedBox(height: 16),
+                    const Row(
+                      children: [
+                        Expanded(child: Divider(color: Colors.white12)),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 10),
+                          child: Text('or join with a link', style: TextStyle(fontSize: 12, color: UsapColors.muted)),
+                        ),
+                        Expanded(child: Divider(color: Colors.white12)),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _room,
+                      decoration: InputDecoration(
+                        hintText: 'Invite link or room code',
+                        errorText: _roomError,
+                        prefixIcon: const Icon(Icons.link_rounded),
+                        suffixIcon: IconButton(icon: const Icon(Icons.login_rounded), onPressed: _join, tooltip: 'Join'),
+                      ),
+                      onSubmitted: (_) => _join(),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

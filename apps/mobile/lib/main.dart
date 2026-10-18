@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import 'screens/home_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'services/settings.dart';
+import 'theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,14 +22,9 @@ class UsapApp extends StatelessWidget {
     return MaterialApp(
       title: 'Usap',
       debugShowCheckedModeBanner: false,
-      // Dark, like the web app and most video-call apps.
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        colorSchemeSeed: const Color(0xFF0284C7), // sky-600, the web app's accent
-        scaffoldBackgroundColor: const Color(0xFF0A0A0A),
-        useMaterial3: true,
-      ),
-      home: HomeScreen(settings: settings),
+      theme: usapTheme(),
+      // First launch: the intro, which then continues to the home screen.
+      home: settings.onboarded ? HomeScreen(settings: settings) : OnboardingScreen(settings: settings),
     );
   }
 }

@@ -5,12 +5,122 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/*
+ * Usap brand. Deep navy "ink" backgrounds, a sky -> violet accent gradient.
+ * The same values are used in the Flutter app (apps/mobile/lib/theme.dart).
+ */
+@theme {
+  --color-ink-950: #060a14;
+  --color-ink-900: #0a1020;
+  --color-ink-800: #111a2f;
+  --color-ink-700: #1b2642;
+  --color-ink-600: #2a3656;
+  --color-sky-brand: #38bdf8;
+  --color-violet-brand: #8b5cf6;
+
+  --animate-fade-up: fade-up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-fade-in: fade-in 0.5s ease-out both;
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-float-slow: float 11s ease-in-out infinite;
+  --animate-pulse-ring: pulse-ring 2.4s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+  --animate-wave: wave 1s ease-in-out infinite;
+  --animate-caret: caret 1s step-end infinite;
+  --animate-gradient: gradient-pan 6s ease infinite;
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes float {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0);
+    }
+    50% {
+      transform: translate3d(0, -14px, 0);
+    }
+  }
+  @keyframes pulse-ring {
+    0% {
+      transform: scale(0.85);
+      opacity: 0.7;
+    }
+    100% {
+      transform: scale(1.9);
+      opacity: 0;
+    }
+  }
+  @keyframes wave {
+    0%,
+    100% {
+      transform: scaleY(0.35);
+    }
+    50% {
+      transform: scaleY(1);
+    }
+  }
+  @keyframes caret {
+    50% {
+      opacity: 0;
+    }
+  }
+  @keyframes gradient-pan {
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+}
+
+/* Text filled with the brand gradient. */
+@utility text-gradient {
+  background-image: linear-gradient(100deg, var(--color-sky-brand), var(--color-violet-brand), #f0abfc);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* The main call-to-action look. */
+@utility bg-brand {
+  background-image: linear-gradient(110deg, #0ea5e9, var(--color-violet-brand), #0ea5e9);
+  background-size: 200% 200%;
+}
+
 /* A call UI is dark in both themes, like most video apps. */
 :root {
   color-scheme: dark;
 }
 
 body {
-  background: #0a0a0a;
-  color: #ededed;
+  background: var(--color-ink-950);
+  color: #e8ecf5;
+}
+
+/* People who ask their device for less motion get (almost) none. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

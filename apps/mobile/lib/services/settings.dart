@@ -19,6 +19,10 @@ class Settings {
   String get name => _prefs.getString('name') ?? '';
   set name(String value) => _prefs.setString('name', value);
 
+  /// Has the first-run intro been shown? (Bump the key to show it again after big changes.)
+  bool get onboarded => _prefs.getBool('onboarded.v1') ?? false;
+  set onboarded(bool value) => _prefs.setBool('onboarded.v1', value);
+
   String get language => _prefs.getString('lang') ?? 'en';
   set language(String value) => _prefs.setString('lang', value);
 

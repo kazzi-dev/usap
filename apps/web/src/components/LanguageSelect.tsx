@@ -18,7 +18,7 @@ export function LanguageSelect({ id, value, onChange, className = "" }: Language
       onChange={(e) => {
         if (isLanguageCode(e.target.value)) onChange(e.target.value);
       }}
-      className={`rounded-lg border border-neutral-700 bg-neutral-900 text-white outline-none focus:border-sky-500 ${className}`}
+      className={`rounded-lg border border-white/10 bg-ink-800 text-white outline-none transition focus:border-sky-400 ${className}`}
     >
       {LANGUAGE_OPTIONS.map((option) => (
         <option key={option.code} value={option.code}>
