@@ -39,7 +39,7 @@ class _LogoPainter extends CustomPainter {
       ..close();
     canvas.drawPath(front, Paint()..color = UsapColors.text);
 
-    final dot = Paint()..color = Colors.white;
+    final dot = Paint()..color = UsapColors.ink950;
     for (final x in [11.0, 16.0, 21.0]) {
       canvas.drawCircle(Offset(x, 12.5), 1.6, dot);
     }
@@ -54,7 +54,7 @@ class Logo extends StatelessWidget {
   const Logo({super.key});
 
   @override
-  Widget build(BuildContext context) => const Row(
+  Widget build(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
       LogoMark(),
@@ -90,7 +90,7 @@ class GradientButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: onPressed == null ? Colors.black38 : UsapColors.text,
+        color: onPressed == null ? UsapColors.muted : UsapColors.text,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Material(
@@ -105,9 +105,9 @@ class GradientButton extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: UsapColors.ink950),
                 ),
-                if (icon != null) ...[const SizedBox(width: 8), Icon(icon, size: 20, color: Colors.white)],
+                if (icon != null) ...[const SizedBox(width: 8), Icon(icon, size: 20, color: UsapColors.ink950)],
               ],
             ),
           ),

@@ -1,23 +1,30 @@
 import 'package:flutter/material.dart';
 
 /// Usap brand: "ink and hanko". White paper, black ink, one seal-red accent;
-/// the same values as the web app (apps/web/src/app/globals.css). The old
-/// names are kept so screens didn't need rewriting.
+/// the same values as the web app (apps/web/src/app/globals.css). In dark
+/// mode the paper and ink swap. The old names are kept so screens didn't need
+/// rewriting.
 class UsapColors {
-  static const ink950 = Color(0xFFFFFFFF); // page background
-  static const ink900 = Color(0xFFFFFFFF); // cards
-  static const ink800 = Color(0xFFF5F5F4); // inputs, tiles
-  static const ink700 = Color(0xFFE7E5E4); // borders, quiet fills
-  static const hanko = Color(0xFFD93A2B); // the one accent
-  static const sky = hanko;
-  static const violet = Color(0xFF111111);
-  static const pink = Color(0xFF111111);
-  static const text = Color(0xFF111111);
-  static const muted = Color(0xFF737373);
+  /// Set by UsapApp from the user's choice (or the phone's setting).
+  static bool dark = false;
+
+  static Color _pick(int light, int dark_) => Color(dark ? dark_ : light);
+
+  static Color get ink950 => _pick(0xFFFFFFFF, 0xFF0A0A0A); // page background
+  static Color get ink900 => _pick(0xFFFFFFFF, 0xFF141414); // cards
+  static Color get ink800 => _pick(0xFFF5F5F4, 0xFF1F1F1F); // inputs, tiles
+  static Color get ink700 => _pick(0xFFE7E5E4, 0xFF2E2E2E); // borders, quiet fills
+  static Color get hanko => _pick(0xFFD93A2B, 0xFFEF5444); // the one accent
+  static Color get sky => hanko;
+  static Color get violet => text;
+  static Color get pink => text;
+  static Color get text => _pick(0xFF111111, 0xFFF5F5F5);
+  static Color get muted => _pick(0xFF737373, 0xFFA3A3A3);
+  static Color get line => _pick(0x1F000000, 0x29FFFFFF); // hairlines, dividers
 
   /// Flat fills (kept as "gradients" of one color for older call sites).
-  static const brandGradient = LinearGradient(colors: [text, text]);
-  static const textGradient = LinearGradient(colors: [hanko, hanko]);
+  static LinearGradient get brandGradient => LinearGradient(colors: [text, text]);
+  static LinearGradient get textGradient => LinearGradient(colors: [hanko, hanko]);
 }
 
 OutlineInputBorder _border(Color color, [double width = 1]) => OutlineInputBorder(
@@ -26,17 +33,19 @@ OutlineInputBorder _border(Color color, [double width = 1]) => OutlineInputBorde
 );
 
 ThemeData usapTheme() {
+  final brightness = UsapColors.dark ? Brightness.dark : Brightness.light;
   final base = ThemeData(
-    brightness: Brightness.light,
+    brightness: brightness,
     useMaterial3: true,
     colorScheme: ColorScheme.fromSeed(
       seedColor: UsapColors.text,
-      brightness: Brightness.light,
+      brightness: brightness,
       primary: UsapColors.text,
+      onPrimary: UsapColors.ink950,
       secondary: UsapColors.hanko,
-      surface: Colors.white,
+      surface: UsapColors.ink950,
     ),
-    scaffoldBackgroundColor: Colors.white,
+    scaffoldBackgroundColor: UsapColors.ink950,
   );
   return base.copyWith(
     inputDecorationTheme: InputDecorationTheme(
@@ -54,7 +63,11 @@ ThemeData usapTheme() {
 ThemeData usapCallTheme() => ThemeData(
   brightness: Brightness.dark,
   useMaterial3: true,
-  colorScheme: ColorScheme.fromSeed(seedColor: UsapColors.hanko, brightness: Brightness.dark, primary: Colors.white),
+  colorScheme: ColorScheme.fromSeed(
+    seedColor: const Color(0xFFD93A2B),
+    brightness: Brightness.dark,
+    primary: Colors.white,
+  ),
   scaffoldBackgroundColor: Colors.black,
 );
 

@@ -5,15 +5,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 
 class _DemoLine {
-  const _DemoLine(
-    this.speaker,
-    this.speakerLang,
-    this.text,
-    this.listener,
-    this.listenerLang,
-    this.translated,
-    this.colors,
-  );
+  _DemoLine(this.speaker, this.speakerLang, this.text, this.listener, this.listenerLang, this.translated, this.colors);
 
   final String speaker;
   final String speakerLang;
@@ -25,7 +17,7 @@ class _DemoLine {
 }
 
 // Same conversation as the web demo (apps/web/src/components/landing/SubtitleDemo.tsx).
-const _lines = [
+final _lines = [
   _DemoLine('Ana', 'Tagalog', 'Kumusta ka? Kumain ka na ba?', 'Ken', '日本語', '元気？もうご飯食べた？', [
     UsapColors.hanko,
     UsapColors.hanko,
@@ -106,7 +98,7 @@ class _SubtitleDemoState extends State<SubtitleDemo> {
       decoration: BoxDecoration(
         color: UsapColors.ink900.withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+        border: Border.all(color: UsapColors.text.withValues(alpha: 0.08)),
       ),
       padding: const EdgeInsets.all(14),
       child: Column(
@@ -117,10 +109,10 @@ class _SubtitleDemoState extends State<SubtitleDemo> {
               Container(
                 width: 7,
                 height: 7,
-                decoration: const BoxDecoration(color: UsapColors.hanko, shape: BoxShape.circle),
+                decoration: BoxDecoration(color: UsapColors.hanko, shape: BoxShape.circle),
               ),
               const SizedBox(width: 6),
-              const Text('Live demo', style: TextStyle(fontSize: 12, color: UsapColors.muted)),
+              Text('Live demo', style: TextStyle(fontSize: 12, color: UsapColors.muted)),
             ],
           ),
           const SizedBox(height: 10),
@@ -142,7 +134,7 @@ class _SubtitleDemoState extends State<SubtitleDemo> {
               children: [
                 TextSpan(
                   text: '${line.speaker}: ',
-                  style: const TextStyle(fontWeight: FontWeight.w600, color: UsapColors.muted),
+                  style: TextStyle(fontWeight: FontWeight.w600, color: UsapColors.muted),
                 ),
                 TextSpan(text: line.text.characters.take(_typed).toString()),
               ],
@@ -171,7 +163,7 @@ class _SubtitleDemoState extends State<SubtitleDemo> {
                   const SizedBox(height: 2),
                   Text(
                     line.translated,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: UsapColors.text),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: UsapColors.text),
                   ),
                 ],
               ),
@@ -194,7 +186,7 @@ class _Tile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           colors: [UsapColors.ink700, UsapColors.ink800],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -219,7 +211,7 @@ class _Tile extends StatelessWidget {
               alignment: Alignment.center,
               child: Text(
                 person.speaker[0],
-                style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white, fontSize: 17),
+                style: TextStyle(fontWeight: FontWeight.w700, color: UsapColors.ink950, fontSize: 17),
               ),
             ),
           ),
@@ -229,12 +221,12 @@ class _Tile extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.4),
+                color: UsapColors.text.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
                 '${person.speaker} · ${person.speakerLang}',
-                style: const TextStyle(fontSize: 10, color: Colors.black54),
+                style: TextStyle(fontSize: 10, color: UsapColors.muted),
               ),
             ),
           ),

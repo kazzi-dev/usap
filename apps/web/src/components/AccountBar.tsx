@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { clearSession, useSession } from "@/lib/session";
+import { ThemeToggle } from "./ThemeToggle";
 
 /** Top-right: "Log in", or the user's name with History and Log out. */
 export function AccountBar() {
@@ -18,6 +19,7 @@ export function AccountBar() {
 
   return (
     <nav className="flex items-center gap-4 text-sm">
+      <ThemeToggle />
       {session ? (
         <>
           <span className="hidden text-neutral-500 sm:inline">{session.user.name}</span>

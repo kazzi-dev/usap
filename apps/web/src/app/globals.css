@@ -97,7 +97,7 @@
 
 /* The main call-to-action look. */
 @utility bg-brand {
-  background-color: #111111;
+  background-color: var(--color-neutral-950);
 }
 
 /* Light pages; the in-call screen sets its own dark colors. */
@@ -106,8 +106,66 @@
 }
 
 body {
-  background: #ffffff;
-  color: #111111;
+  background: var(--color-white);
+  color: var(--color-neutral-950);
+}
+
+/*
+ * Dark mode: flip the neutral scale (and "white"), so every page follows
+ * without per-component dark: classes. Follows the device unless the user
+ * picked a theme (data-theme on <html>, set by ThemeToggle).
+ */
+:root[data-theme="dark"] {
+  --color-white: #0a0a0a;
+  --color-neutral-50: #141414;
+  --color-neutral-100: #1f1f1f;
+  --color-neutral-200: #2e2e2e;
+  --color-neutral-300: #404040;
+  --color-neutral-400: #5c5c5c;
+  --color-neutral-500: #a3a3a3;
+  --color-neutral-600: #b8b8b8;
+  --color-neutral-700: #d4d4d4;
+  --color-neutral-800: #e5e5e5;
+  --color-neutral-900: #f0f0f0;
+  --color-neutral-950: #fafafa;
+  --color-hanko: #ef5444;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+  --color-white: #0a0a0a;
+  --color-neutral-50: #141414;
+  --color-neutral-100: #1f1f1f;
+  --color-neutral-200: #2e2e2e;
+  --color-neutral-300: #404040;
+  --color-neutral-400: #5c5c5c;
+  --color-neutral-500: #a3a3a3;
+  --color-neutral-600: #b8b8b8;
+  --color-neutral-700: #d4d4d4;
+  --color-neutral-800: #e5e5e5;
+  --color-neutral-900: #f0f0f0;
+  --color-neutral-950: #fafafa;
+  --color-hanko: #ef5444;
+  color-scheme: dark;
+  }
+}
+
+/* The call screen is always dark: put the original scale back inside it. */
+.keep-dark {
+  --color-white: #ffffff;
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-200: #e5e5e5;
+  --color-neutral-300: #d4d4d4;
+  --color-neutral-400: #a3a3a3;
+  --color-neutral-500: #737373;
+  --color-neutral-600: #525252;
+  --color-neutral-700: #404040;
+  --color-neutral-800: #262626;
+  --color-neutral-900: #171717;
+  --color-neutral-950: #0a0a0a;
+  --color-hanko: #d93a2b;
+  color-scheme: dark;
 }
 
 /* People who ask their device for less motion get (almost) none. */

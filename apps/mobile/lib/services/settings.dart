@@ -23,6 +23,16 @@ class Settings {
   bool get onboarded => _prefs.getBool('onboarded.v1') ?? false;
   set onboarded(bool value) => _prefs.setBool('onboarded.v1', value);
 
+  /// Look: 'system' (follow the phone), 'light' or 'dark'.
+  String get themeMode => _prefs.getString('theme') ?? 'system';
+  set themeMode(String value) {
+    _prefs.setString('theme', value);
+    themeChanges.value++;
+  }
+
+  /// Ticks when the look changes, so the app can redraw.
+  static final themeChanges = ValueNotifier<int>(0);
+
   String get language => _prefs.getString('lang') ?? 'en';
   set language(String value) => _prefs.setString('lang', value);
 

@@ -67,7 +67,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: _finish,
-                  child: const Text('Skip', style: TextStyle(color: UsapColors.muted)),
+                  child: Text('Skip', style: TextStyle(color: UsapColors.muted)),
                 ),
               ),
               Expanded(
@@ -75,7 +75,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   controller: _pages,
                   onPageChanged: (i) => setState(() => _page = i),
                   children: [
-                    const _Page(
+                    _Page(
                       art: _WelcomeArt(),
                       title: 'Welcome to Usap',
                       highlight: 'Usap',
@@ -83,7 +83,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           'Video calls where everyone reads the conversation in their own language: '
                           'English, Tagalog, Bisaya or Japanese.',
                     ),
-                    const _Page(
+                    _Page(
                       art: _SpeakArt(),
                       title: 'Just talk naturally',
                       body:
@@ -96,7 +96,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       body: "You'll read subtitles in it too. You can change it anytime.",
                       extra: _LanguageGrid(selected: _language, onPick: _pickLanguage),
                     ),
-                    const _Page(
+                    _Page(
                       art: _PrivacyArt(),
                       title: 'Private by design',
                       bullets: [
@@ -122,7 +122,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 duration: const Duration(milliseconds: 380),
                                 curve: Curves.easeOutCubic,
                               ),
-                              child: const Text('Back', style: TextStyle(color: UsapColors.muted)),
+                              child: Text('Back', style: TextStyle(color: UsapColors.muted)),
                             ),
                     ),
                     Expanded(
@@ -136,7 +136,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               width: i == _page ? 22 : 7,
                               height: 7,
                               decoration: BoxDecoration(
-                                color: i == _page ? UsapColors.sky : Colors.black26,
+                                color: i == _page ? UsapColors.sky : UsapColors.line,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                             ),
@@ -170,7 +170,7 @@ class _Page extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const titleStyle = TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: UsapColors.text, height: 1.15);
+    final titleStyle = TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: UsapColors.text, height: 1.15);
     final h = highlight;
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -196,7 +196,7 @@ class _Page extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.check_circle, size: 20, color: UsapColors.hanko),
+                Icon(Icons.check_circle, size: 20, color: UsapColors.hanko),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(b, style: const TextStyle(fontSize: 15, height: 1.4, color: Color(0xFF404040))),
@@ -238,7 +238,7 @@ class _LanguageGrid extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: language.code == selected ? UsapColors.sky.withValues(alpha: 0.12) : UsapColors.ink800,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: language.code == selected ? UsapColors.sky : Colors.black12, width: 1.4),
+                  border: Border.all(color: language.code == selected ? UsapColors.sky : UsapColors.line, width: 1.4),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,9 +246,9 @@ class _LanguageGrid extends StatelessWidget {
                   children: [
                     Text(
                       language.native,
-                      style: const TextStyle(fontWeight: FontWeight.w600, color: UsapColors.text),
+                      style: TextStyle(fontWeight: FontWeight.w600, color: UsapColors.text),
                     ),
-                    Text(_greetings[language.code]!, style: const TextStyle(fontSize: 13, color: UsapColors.muted)),
+                    Text(_greetings[language.code]!, style: TextStyle(fontSize: 13, color: UsapColors.muted)),
                   ],
                 ),
               ),
@@ -318,7 +318,7 @@ class _WelcomeArtState extends State<_WelcomeArt> with SingleTickerProviderState
               decoration: BoxDecoration(
                 color: UsapColors.ink900,
                 borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: Colors.black12),
+                border: Border.all(color: UsapColors.line),
               ),
               child: const LogoMark(size: 64),
             ),
@@ -330,9 +330,9 @@ class _WelcomeArtState extends State<_WelcomeArt> with SingleTickerProviderState
                   decoration: BoxDecoration(
                     color: UsapColors.ink800,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.black12),
+                    border: Border.all(color: UsapColors.line),
                   ),
-                  child: Text(words[i], style: const TextStyle(color: UsapColors.text)),
+                  child: Text(words[i], style: TextStyle(color: UsapColors.text)),
                 ),
               ),
           ],
@@ -366,7 +366,7 @@ class _SpeakArtState extends State<_SpeakArt> with SingleTickerProviderStateMixi
                 color: UsapColors.sky.withValues(alpha: 0.15),
                 border: Border.all(color: UsapColors.sky.withValues(alpha: 0.4)),
               ),
-              child: const Icon(Icons.mic_rounded, color: UsapColors.sky, size: 30),
+              child: Icon(Icons.mic_rounded, color: UsapColors.sky, size: 30),
             ),
             const SizedBox(height: 10),
             AnimatedBuilder(
@@ -379,7 +379,7 @@ class _SpeakArtState extends State<_SpeakArt> with SingleTickerProviderStateMixi
                       width: 5,
                       height: 8 + 18 * (0.5 + 0.5 * sin(2 * pi * (loop.value * 2) + i * 0.9)),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
+                        gradient: LinearGradient(
                           colors: [UsapColors.sky, UsapColors.violet],
                           begin: Alignment.bottomCenter,
                           end: Alignment.topCenter,
@@ -392,7 +392,7 @@ class _SpeakArtState extends State<_SpeakArt> with SingleTickerProviderStateMixi
             ),
           ],
         ),
-        const Padding(
+        Padding(
           padding: EdgeInsets.symmetric(horizontal: 12),
           child: Icon(Icons.arrow_forward_rounded, color: UsapColors.muted),
         ),
@@ -453,7 +453,7 @@ class _LanguageArt extends StatelessWidget {
           child: Text(
             _greetings[code]!,
             key: ValueKey(code),
-            style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w700, color: UsapColors.text),
+            style: TextStyle(fontSize: 40, fontWeight: FontWeight.w700, color: UsapColors.text),
           ),
         ),
         const SizedBox(height: 14),
@@ -465,12 +465,12 @@ class _LanguageArt extends StatelessWidget {
                 duration: const Duration(milliseconds: 250),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                 decoration: BoxDecoration(
-                  color: language.code == code ? UsapColors.sky : Colors.black12,
+                  color: language.code == code ? UsapColors.sky : UsapColors.line,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   language.native,
-                  style: TextStyle(fontSize: 12, color: language.code == code ? UsapColors.ink950 : Colors.black54),
+                  style: TextStyle(fontSize: 12, color: language.code == code ? UsapColors.ink950 : UsapColors.muted),
                 ),
               ),
           ],
@@ -498,7 +498,7 @@ class _PrivacyArtState extends State<_PrivacyArt> with SingleTickerProviderState
     ),
     child: Text(
       letter,
-      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white),
+      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: UsapColors.ink950),
     ),
   );
 
@@ -508,19 +508,19 @@ class _PrivacyArtState extends State<_PrivacyArt> with SingleTickerProviderState
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          padding: const EdgeInsets.all(10),
+          padding: EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: UsapColors.ink900,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: UsapColors.hanko.withValues(alpha: 0.4)),
           ),
-          child: const Icon(Icons.verified_user_outlined, color: UsapColors.hanko, size: 28),
+          child: Icon(Icons.verified_user_outlined, color: UsapColors.hanko, size: 28),
         ),
-        const SizedBox(height: 18),
+        SizedBox(height: 18),
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _avatar('A', const [UsapColors.hanko, UsapColors.hanko]),
+            _avatar('A', [UsapColors.hanko, UsapColors.hanko]),
             SizedBox(
               width: 120,
               height: 20,
@@ -529,7 +529,7 @@ class _PrivacyArtState extends State<_PrivacyArt> with SingleTickerProviderState
                 builder: (context, _) => CustomPaint(painter: _StreamPainter(loop.value)),
               ),
             ),
-            _avatar('K', const [UsapColors.text, UsapColors.text]),
+            _avatar('K', [UsapColors.text, UsapColors.text]),
           ],
         ),
       ],
@@ -550,7 +550,7 @@ class _StreamPainter extends CustomPainter {
       Offset(8, y),
       Offset(size.width - 8, y),
       Paint()
-        ..color = Colors.black12
+        ..color = UsapColors.line
         ..strokeWidth = 3
         ..strokeCap = StrokeCap.round,
     );

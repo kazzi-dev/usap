@@ -77,7 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Settings',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: UsapColors.text),
             ),
@@ -91,10 +91,25 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               onChanged: (_) => setState(() {}),
             ),
+            const SizedBox(height: 16),
+            Text('Look', style: TextStyle(color: UsapColors.muted)),
+            const SizedBox(height: 8),
+            SegmentedButton<String>(
+              segments: const [
+                ButtonSegment(value: 'system', label: Text('Auto'), icon: Icon(Icons.brightness_auto_outlined)),
+                ButtonSegment(value: 'light', label: Text('Light'), icon: Icon(Icons.light_mode_outlined)),
+                ButtonSegment(value: 'dark', label: Text('Dark'), icon: Icon(Icons.dark_mode_outlined)),
+              ],
+              selected: {widget.settings.themeMode},
+              onSelectionChanged: (choice) {
+                Navigator.of(sheetContext).pop();
+                widget.settings.themeMode = choice.first;
+              },
+            ),
             const SizedBox(height: 8),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.auto_awesome, color: UsapColors.sky),
+              leading: Icon(Icons.auto_awesome, color: UsapColors.sky),
               title: const Text('Replay the intro'),
               onTap: () {
                 Navigator.of(sheetContext).pop();
@@ -123,12 +138,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   IconButton(
                     onPressed: _openSettings,
                     tooltip: 'Settings',
-                    icon: const Icon(Icons.tune_rounded, color: UsapColors.muted),
+                    icon: Icon(Icons.tune_rounded, color: UsapColors.muted),
                   ),
                 ],
               ),
               const SizedBox(height: 22),
-              const Text(
+              Text(
                 'Talk to anyone.',
                 style: TextStyle(fontSize: 34, fontWeight: FontWeight.w700, color: UsapColors.text, height: 1.1),
               ),
@@ -151,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: BoxDecoration(
                   color: UsapColors.ink900.withValues(alpha: 0.85),
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+                  border: Border.all(color: UsapColors.text.withValues(alpha: 0.08)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -172,13 +187,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       decoration: BoxDecoration(
                         color: UsapColors.ink800,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.black.withValues(alpha: 0.1)),
+                        border: Border.all(color: UsapColors.text.withValues(alpha: 0.1)),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.translate_rounded, color: UsapColors.muted, size: 22),
+                          Icon(Icons.translate_rounded, color: UsapColors.muted, size: 22),
                           const SizedBox(width: 12),
-                          const Text('I speak', style: TextStyle(color: UsapColors.muted)),
+                          Text('I speak', style: TextStyle(color: UsapColors.muted)),
                           const Spacer(),
                           LanguageDropdown(
                             value: _language,
@@ -195,14 +210,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       onPressed: () => _open(createRoomId()),
                     ),
                     const SizedBox(height: 16),
-                    const Row(
+                    Row(
                       children: [
-                        Expanded(child: Divider(color: Colors.black12)),
+                        Expanded(child: Divider(color: UsapColors.line)),
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 10),
                           child: Text('or join with a link', style: TextStyle(fontSize: 12, color: UsapColors.muted)),
                         ),
-                        Expanded(child: Divider(color: Colors.black12)),
+                        Expanded(child: Divider(color: UsapColors.line)),
                       ],
                     ),
                     const SizedBox(height: 12),

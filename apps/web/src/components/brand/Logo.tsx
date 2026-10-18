@@ -11,11 +11,11 @@ export function LogoMark({ className = "size-9" }: { className?: string }) {
       />
       <path
         d="M9 3h14a6 6 0 0 1 6 6v7a6 6 0 0 1-6 6h-8.5L9 26.5V22a6 6 0 0 1-6-6V9a6 6 0 0 1 6-6z"
-        fill="#111111"
+        style={{ fill: "var(--color-neutral-950)" }}
       />
-      <circle cx="11" cy="12.5" r="1.6" fill="#fff" />
-      <circle cx="16" cy="12.5" r="1.6" fill="#fff" />
-      <circle cx="21" cy="12.5" r="1.6" fill="#fff" />
+      <circle cx="11" cy="12.5" r="1.6" style={{ fill: "var(--color-white)" }} />
+      <circle cx="16" cy="12.5" r="1.6" style={{ fill: "var(--color-white)" }} />
+      <circle cx="21" cy="12.5" r="1.6" style={{ fill: "var(--color-white)" }} />
     </svg>
   );
 }

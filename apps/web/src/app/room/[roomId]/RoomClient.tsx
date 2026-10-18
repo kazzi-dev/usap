@@ -152,7 +152,7 @@ function CallOver({ state, onRejoin }: { state: CallState; onRejoin: () => void 
         : null;
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-neutral-950 px-4 text-center text-white">
+    <main className="keep-dark flex min-h-dvh items-center justify-center bg-neutral-950 px-4 text-center text-white">
       <div className="max-w-md">
         <h1 className="text-2xl font-semibold">{title}</h1>
         {detail && <p className="mt-2 text-neutral-400">{detail}</p>}
@@ -223,7 +223,7 @@ function InCall({ roomId, name, state, session }: { roomId: string; name: string
   };
 
   return (
-    <main className="flex h-dvh flex-col bg-neutral-950 text-white">
+    <main className="keep-dark flex h-dvh flex-col bg-neutral-950 text-white">
       <header className="flex items-center justify-between gap-2 px-4 py-3">
         <div className="min-w-0">
           <p className="truncate font-mono text-sm text-neutral-300">{roomId}</p>
