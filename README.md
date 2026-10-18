@@ -1,16 +1,49 @@
 # Usap
 
-Video calls with **live translated subtitles**. Two people join a call from a
-browser (or, later, the Flutter app), each picks a language (English, Tagalog,
-Cebuano/Bisaya, Japanese), and what one person says shows up as a subtitle on
-the other person's screen in their language.
+**Video calls where each person reads the other in their own language.**
+Two people join a call from a browser or the Android app. Each picks a
+language: English, Tagalog, Cebuano (Bisaya) or Japanese. While they talk,
+speech is transcribed and translated into live subtitles. After the call, both
+get a saved transcript and an AI summary.
 
-Built entirely on free tools: WebRTC, Socket.IO, Groq's free tier, and local
-open-source models.
+*Usap* means "to talk" in Filipino. It costs **$0** to run: WebRTC, Groq's
+free tier, open-source models running locally, and free hosting.
 
-> **Status: Stage 5 of 6.** 1-on-1 video calls with live translated
-> subtitles in the browser and an Android app, accounts, saved transcripts and
-> AI summaries. Stage 6 adds polish, more tests and deployment.
+## Highlights
+
+- **Real-time pipeline across 3 runtimes.** The browser detects speech (Silero
+  VAD, WASM). The Node signal server routes each speech segment. The Python AI
+  service transcribes it (Whisper) and translates it (NLLB-200), and the
+  subtitle reaches the other person in about a second.
+- **Peer-to-peer video.** Audio and video flow directly between the two
+  devices over WebRTC. The server never sees the video. It handles
+  [perfect negotiation](https://developer.mozilla.org/docs/Web/API/WebRTC_API/Perfect_negotiation),
+  ICE restarts after network changes, and a TURN relay fallback for strict
+  networks. Built-in diagnostics explain why a call can't connect.
+- **Stays free under load.** A token-bucket limiter keeps every Groq call
+  inside the free-tier limits (requests per minute and per day, audio
+  seconds). When a limit is reached, speech-to-text switches to a local
+  faster-whisper model, so subtitles never stop.
+- **Translation runs on your own server.** Meta's NLLB-200 model is converted
+  to CTranslate2 int8 and runs on the server's CPU. It covers Cebuano, which
+  most free translation APIs don't.
+- **Two clients, one protocol.** The Next.js web app and the Flutter Android
+  app join the same calls, with shared typed message contracts (`packages/shared`).
+- **Accounts and history.** Passwords are hashed with scrypt, and sessions use
+  hashed bearer tokens. Transcripts are stored in Postgres (Drizzle ORM), and
+  an LLM writes summaries after each call.
+- **Polish.** First-run onboarding, light and dark mode, reduced-motion
+  support, a mobile-first layout, and friendly error and 404 pages.
+
+| Layer | Tech |
+| ----- | ---- |
+| Web | Next.js 16, React 19, TypeScript, Tailwind CSS v4 |
+| Mobile | Flutter (Android), flutter_webrtc |
+| Realtime | WebRTC, Socket.IO, Metered TURN |
+| Backend | Node 22, Express 5, Zod, Drizzle ORM, Postgres / PGlite |
+| AI | Python, FastAPI, Groq Whisper large-v3-turbo, faster-whisper, NLLB-200 (CTranslate2), Groq LLM |
+| Tests | node:test (rooms, auth, transcripts, helpers), pytest (rate limiter, translator), flutter test (VAD) |
+| Hosting | Vercel + Oracle Cloud Always Free ([deploy guide](docs/DEPLOY.md)) |
 
 | Stage | What | Status |
 | ----- | ---- | ------ |
@@ -19,7 +52,7 @@ open-source models.
 | 3 | Translation (NLLB-200) with per-user language | ✅ |
 | 4 | Flutter app joining the same calls | ✅ |
 | 5 | Postgres transcripts, AI summary, call history, auth | ✅ |
-| 6 | Tests, error states, deployment guide | ⏳ |
+| 6 | Tests, error states, onboarding, theming, deployment guide | ✅ |
 
 ## Architecture
 
@@ -362,6 +395,7 @@ curl -X POST http://127.0.0.1:8000/translate -H "Content-Type: application/json"
 | `npm run dev` | Signal (:4000) + web (:3000) + AI (:8000) over HTTP |
 | `npm run dev:https` | Same, over HTTPS for LAN/phone testing |
 | `npm run db:up` / `db:down` | Start / stop Postgres in Docker |
+| `npm test` | All Node tests (signal + web) |
 | `npm run test:signal` | Backend tests (auth, recording rules, privacy) on in-memory Postgres |
 | `npm run test:ai` | Python unit tests (rate limiter, languages, sentence splitting) |
 | `npm run build:mobile` | Build the Android debug APK (`-- --install` to install over USB) |

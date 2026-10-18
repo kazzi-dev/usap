@@ -21,7 +21,9 @@
     "lint": "npm run lint -w apps/web",
     "build:mobile": "node scripts/build-mobile.mjs",
     "test:mobile": "cd apps/mobile && flutter test",
-    "test:signal": "npm test -w apps/signal"
+    "test:signal": "npm test -w apps/signal",
+    "test:web": "npm test -w apps/web",
+    "test": "npm run test:signal && npm run test:web"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
