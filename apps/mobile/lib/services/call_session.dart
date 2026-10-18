@@ -367,7 +367,9 @@ class CallSession extends ChangeNotifier {
 
     socket.onConnectError((_) {
       if (!_joined) {
-        _error = "Can't reach the server at $signalUrl. Is it running, and is the phone on the same Wi-Fi?";
+        _error = "Can't reach the server at $signalUrl. "
+            'If someone sent you a link, go back and paste the WHOLE invite link '
+            '(not just the room code): the app then uses the server from the link.';
         _notify();
       }
     });
