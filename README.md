@@ -43,7 +43,7 @@ free tier, open-source models running locally, and free hosting.
 | Backend | Node 22, Express 5, Zod, Drizzle ORM, Postgres / PGlite |
 | AI | Python, FastAPI, Groq Whisper large-v3-turbo, faster-whisper, NLLB-200 (CTranslate2), Groq LLM |
 | Tests | node:test (rooms, auth, transcripts, helpers), pytest (rate limiter, translator), flutter test (VAD) |
-| Hosting | Vercel + Oracle Cloud Always Free ([deploy guide](docs/DEPLOY.md)) |
+| Hosting | Vercel + Hugging Face Spaces (Docker) + Neon Postgres, no credit card ([deploy guide](docs/DEPLOY.md)) |
 
 | Stage | What | Status |
 | ----- | ---- | ------ |

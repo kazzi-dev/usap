@@ -23,7 +23,8 @@
     "test:mobile": "cd apps/mobile && flutter test",
     "test:signal": "npm test -w apps/signal",
     "test:web": "npm test -w apps/web",
-    "test": "npm run test:signal && npm run test:web"
+    "test": "npm run test:signal && npm run test:web",
+    "deploy:api": "node scripts/deploy-hf.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
