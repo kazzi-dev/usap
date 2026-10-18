@@ -1,53 +1,62 @@
 import 'package:flutter/material.dart';
 
-/// Usap brand colors, the same as the web app (apps/web/src/app/globals.css).
+/// Usap brand: "ink and hanko". White paper, black ink, one seal-red accent;
+/// the same values as the web app (apps/web/src/app/globals.css). The old
+/// names are kept so screens didn't need rewriting.
 class UsapColors {
-  static const ink950 = Color(0xFF060A14);
-  static const ink900 = Color(0xFF0A1020);
-  static const ink800 = Color(0xFF111A2F);
-  static const ink700 = Color(0xFF1B2642);
-  static const sky = Color(0xFF38BDF8);
-  static const violet = Color(0xFF8B5CF6);
-  static const pink = Color(0xFFF0ABFC);
-  static const text = Color(0xFFE8ECF5);
-  static const muted = Color(0xFF94A3B8);
+  static const ink950 = Color(0xFFFFFFFF); // page background
+  static const ink900 = Color(0xFFFFFFFF); // cards
+  static const ink800 = Color(0xFFF5F5F4); // inputs, tiles
+  static const ink700 = Color(0xFFE7E5E4); // borders, quiet fills
+  static const hanko = Color(0xFFD93A2B); // the one accent
+  static const sky = hanko;
+  static const violet = Color(0xFF111111);
+  static const pink = Color(0xFF111111);
+  static const text = Color(0xFF111111);
+  static const muted = Color(0xFF737373);
 
-  /// The accent gradient used for buttons and highlighted text.
-  static const brandGradient = LinearGradient(colors: [Color(0xFF0EA5E9), violet]);
-  static const textGradient = LinearGradient(colors: [sky, violet, pink]);
+  /// Flat fills (kept as "gradients" of one color for older call sites).
+  static const brandGradient = LinearGradient(colors: [text, text]);
+  static const textGradient = LinearGradient(colors: [hanko, hanko]);
 }
+
+OutlineInputBorder _border(Color color, [double width = 1]) => OutlineInputBorder(
+  borderRadius: BorderRadius.circular(14),
+  borderSide: BorderSide(color: color, width: width),
+);
 
 ThemeData usapTheme() {
   final base = ThemeData(
-    brightness: Brightness.dark,
+    brightness: Brightness.light,
     useMaterial3: true,
     colorScheme: ColorScheme.fromSeed(
-      seedColor: UsapColors.sky,
-      brightness: Brightness.dark,
-      surface: UsapColors.ink900,
+      seedColor: UsapColors.text,
+      brightness: Brightness.light,
+      primary: UsapColors.text,
+      secondary: UsapColors.hanko,
+      surface: Colors.white,
     ),
-    scaffoldBackgroundColor: UsapColors.ink950,
+    scaffoldBackgroundColor: Colors.white,
   );
   return base.copyWith(
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: UsapColors.ink800,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: UsapColors.sky, width: 1.5),
-      ),
+      border: _border(UsapColors.ink700),
+      enabledBorder: _border(UsapColors.ink700),
+      focusedBorder: _border(UsapColors.text, 1.5),
     ),
-    textTheme: base.textTheme.apply(bodyColor: UsapColors.text, displayColor: Colors.white),
+    textTheme: base.textTheme.apply(bodyColor: UsapColors.text, displayColor: UsapColors.text),
   );
 }
+
+/// The in-call screen keeps a dark look, like most video apps.
+ThemeData usapCallTheme() => ThemeData(
+  brightness: Brightness.dark,
+  useMaterial3: true,
+  colorScheme: ColorScheme.fromSeed(seedColor: UsapColors.hanko, brightness: Brightness.dark, primary: Colors.white),
+  scaffoldBackgroundColor: Colors.black,
+);
 
 /// True when the user asked the phone for less motion (Accessibility settings).
 bool reduceMotion(BuildContext context) => MediaQuery.maybeDisableAnimationsOf(context) ?? false;

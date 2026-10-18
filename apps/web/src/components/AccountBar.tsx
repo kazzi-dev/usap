@@ -20,16 +20,16 @@ export function AccountBar() {
     <nav className="flex items-center gap-4 text-sm">
       {session ? (
         <>
-          <span className="hidden text-neutral-400 sm:inline">{session.user.name}</span>
-          <Link href="/history" className="text-neutral-200 hover:text-white">
+          <span className="hidden text-neutral-500 sm:inline">{session.user.name}</span>
+          <Link href="/history" className="text-neutral-700 hover:text-neutral-950">
             Call history
           </Link>
-          <button type="button" onClick={logOut} className="text-neutral-400 hover:text-white">
+          <button type="button" onClick={logOut} className="text-neutral-500 hover:text-neutral-950">
             Log out
           </button>
         </>
       ) : (
-        <Link href="/login" className="rounded-lg bg-neutral-800 px-3 py-1.5 text-neutral-100 hover:bg-neutral-700">
+        <Link href="/login" className="rounded-lg bg-neutral-100 px-3 py-1.5 text-neutral-900 hover:bg-neutral-200">
           Log in
         </Link>
       )}

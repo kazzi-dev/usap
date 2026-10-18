@@ -65,7 +65,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             children: [
               Align(
                 alignment: Alignment.centerRight,
-                child: TextButton(onPressed: _finish, child: const Text('Skip', style: TextStyle(color: UsapColors.muted))),
+                child: TextButton(
+                  onPressed: _finish,
+                  child: const Text('Skip', style: TextStyle(color: UsapColors.muted)),
+                ),
               ),
               Expanded(
                 child: PageView(
@@ -76,13 +79,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       art: _WelcomeArt(),
                       title: 'Welcome to Usap',
                       highlight: 'Usap',
-                      body: 'Video calls where everyone reads the conversation in their own language: '
+                      body:
+                          'Video calls where everyone reads the conversation in their own language: '
                           'English, Tagalog, Bisaya or Japanese.',
                     ),
                     const _Page(
                       art: _SpeakArt(),
                       title: 'Just talk naturally',
-                      body: "About a second after you pause, your words appear as subtitles on the other person's "
+                      body:
+                          "About a second after you pause, your words appear as subtitles on the other person's "
                           'screen, translated for them. You see what they say in your language.',
                     ),
                     _Page(
@@ -113,7 +118,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       child: _page == 0
                           ? null
                           : TextButton(
-                              onPressed: () => _pages.previousPage(duration: const Duration(milliseconds: 380), curve: Curves.easeOutCubic),
+                              onPressed: () => _pages.previousPage(
+                                duration: const Duration(milliseconds: 380),
+                                curve: Curves.easeOutCubic,
+                              ),
                               child: const Text('Back', style: TextStyle(color: UsapColors.muted)),
                             ),
                     ),
@@ -128,7 +136,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               width: i == _page ? 22 : 7,
                               height: 7,
                               decoration: BoxDecoration(
-                                color: i == _page ? UsapColors.sky : Colors.white24,
+                                color: i == _page ? UsapColors.sky : Colors.black26,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                             ),
@@ -162,7 +170,7 @@ class _Page extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const titleStyle = TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: Colors.white, height: 1.15);
+    const titleStyle = TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: UsapColors.text, height: 1.15);
     final h = highlight;
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -172,13 +180,15 @@ class _Page extends StatelessWidget {
         if (h == null)
           Text(title, style: titleStyle)
         else
-          Wrap(children: [
-            Text(title.replaceAll(h, ''), style: titleStyle),
-            GradientText(h, style: titleStyle),
-          ]),
+          Wrap(
+            children: [
+              Text(title.replaceAll(h, ''), style: titleStyle),
+              GradientText(h, style: titleStyle),
+            ],
+          ),
         if (body != null) ...[
           const SizedBox(height: 10),
-          Text(body!, style: const TextStyle(fontSize: 16, height: 1.45, color: Color(0xFFCBD5E1))),
+          Text(body!, style: const TextStyle(fontSize: 16, height: 1.45, color: Color(0xFF404040))),
         ],
         for (final b in bullets ?? const <String>[])
           Padding(
@@ -186,9 +196,11 @@ class _Page extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.check_circle, size: 20, color: Color(0xFF34D399)),
+                const Icon(Icons.check_circle, size: 20, color: UsapColors.hanko),
                 const SizedBox(width: 10),
-                Expanded(child: Text(b, style: const TextStyle(fontSize: 15, height: 1.4, color: Color(0xFFCBD5E1)))),
+                Expanded(
+                  child: Text(b, style: const TextStyle(fontSize: 15, height: 1.4, color: Color(0xFF404040))),
+                ),
               ],
             ),
           ),
@@ -226,13 +238,16 @@ class _LanguageGrid extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: language.code == selected ? UsapColors.sky.withValues(alpha: 0.12) : UsapColors.ink800,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: language.code == selected ? UsapColors.sky : Colors.white12, width: 1.4),
+                  border: Border.all(color: language.code == selected ? UsapColors.sky : Colors.black12, width: 1.4),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(language.native, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white)),
+                    Text(
+                      language.native,
+                      style: const TextStyle(fontWeight: FontWeight.w600, color: UsapColors.text),
+                    ),
                     Text(_greetings[language.code]!, style: const TextStyle(fontSize: 13, color: UsapColors.muted)),
                   ],
                 ),
@@ -292,7 +307,10 @@ class _WelcomeArtState extends State<_WelcomeArt> with SingleTickerProviderState
                 child: Container(
                   width: 110 + 120 * ((t + phase) % 1),
                   height: 110 + 120 * ((t + phase) % 1),
-                  decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: UsapColors.sky, width: 2)),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: UsapColors.sky, width: 2),
+                  ),
                 ),
               ),
             Container(
@@ -300,8 +318,7 @@ class _WelcomeArtState extends State<_WelcomeArt> with SingleTickerProviderState
               decoration: BoxDecoration(
                 color: UsapColors.ink900,
                 borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: Colors.white12),
-                boxShadow: [BoxShadow(color: UsapColors.violet.withValues(alpha: 0.3), blurRadius: 40)],
+                border: Border.all(color: Colors.black12),
               ),
               child: const LogoMark(size: 64),
             ),
@@ -313,9 +330,9 @@ class _WelcomeArtState extends State<_WelcomeArt> with SingleTickerProviderState
                   decoration: BoxDecoration(
                     color: UsapColors.ink800,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white12),
+                    border: Border.all(color: Colors.black12),
                   ),
-                  child: Text(words[i], style: const TextStyle(color: Colors.white)),
+                  child: Text(words[i], style: const TextStyle(color: UsapColors.text)),
                 ),
               ),
           ],
@@ -362,7 +379,11 @@ class _SpeakArtState extends State<_SpeakArt> with SingleTickerProviderStateMixi
                       width: 5,
                       height: 8 + 18 * (0.5 + 0.5 * sin(2 * pi * (loop.value * 2) + i * 0.9)),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(colors: [UsapColors.sky, UsapColors.violet], begin: Alignment.bottomCenter, end: Alignment.topCenter),
+                        gradient: const LinearGradient(
+                          colors: [UsapColors.sky, UsapColors.violet],
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                        ),
                         borderRadius: BorderRadius.circular(3),
                       ),
                     ),
@@ -380,10 +401,15 @@ class _SpeakArtState extends State<_SpeakArt> with SingleTickerProviderStateMixi
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _bubble('Kumusta ka? Kumain ka na ba?', UsapColors.ink700, const Color(0xFFCBD5E1), 13),
+              _bubble('Kumusta ka? Kumain ka na ba?', UsapColors.ink700, const Color(0xFF404040), 13),
               const SizedBox(height: 8),
-              _bubble('How are you? Have you eaten yet?', UsapColors.sky.withValues(alpha: 0.14), Colors.white, 15,
-                  border: UsapColors.sky.withValues(alpha: 0.35)),
+              _bubble(
+                'How are you? Have you eaten yet?',
+                UsapColors.sky.withValues(alpha: 0.14),
+                UsapColors.text,
+                15,
+                border: UsapColors.sky.withValues(alpha: 0.35),
+              ),
             ],
           ),
         ),
@@ -392,14 +418,17 @@ class _SpeakArtState extends State<_SpeakArt> with SingleTickerProviderStateMixi
   }
 
   Widget _bubble(String text, Color bg, Color fg, double size, {Color? border}) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(14),
-          border: border != null ? Border.all(color: border) : null,
-        ),
-        child: Text(text, style: TextStyle(color: fg, fontSize: size, fontWeight: size > 14 ? FontWeight.w600 : FontWeight.w400)),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+    decoration: BoxDecoration(
+      color: bg,
+      borderRadius: BorderRadius.circular(14),
+      border: border != null ? Border.all(color: border) : null,
+    ),
+    child: Text(
+      text,
+      style: TextStyle(color: fg, fontSize: size, fontWeight: size > 14 ? FontWeight.w600 : FontWeight.w400),
+    ),
+  );
 }
 
 class _LanguageArt extends StatelessWidget {
@@ -416,9 +445,16 @@ class _LanguageArt extends StatelessWidget {
           duration: const Duration(milliseconds: 350),
           transitionBuilder: (child, animation) => FadeTransition(
             opacity: animation,
-            child: SlideTransition(position: Tween(begin: const Offset(0, 0.2), end: Offset.zero).animate(animation), child: child),
+            child: SlideTransition(
+              position: Tween(begin: const Offset(0, 0.2), end: Offset.zero).animate(animation),
+              child: child,
+            ),
           ),
-          child: Text(_greetings[code]!, key: ValueKey(code), style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w700, color: Colors.white)),
+          child: Text(
+            _greetings[code]!,
+            key: ValueKey(code),
+            style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w700, color: UsapColors.text),
+          ),
         ),
         const SizedBox(height: 14),
         Wrap(
@@ -429,11 +465,13 @@ class _LanguageArt extends StatelessWidget {
                 duration: const Duration(milliseconds: 250),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                 decoration: BoxDecoration(
-                  color: language.code == code ? UsapColors.sky : Colors.white10,
+                  color: language.code == code ? UsapColors.sky : Colors.black12,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(language.native,
-                    style: TextStyle(fontSize: 12, color: language.code == code ? UsapColors.ink950 : Colors.white70)),
+                child: Text(
+                  language.native,
+                  style: TextStyle(fontSize: 12, color: language.code == code ? UsapColors.ink950 : Colors.black54),
+                ),
               ),
           ],
         ),
@@ -451,12 +489,18 @@ class _PrivacyArt extends StatefulWidget {
 
 class _PrivacyArtState extends State<_PrivacyArt> with SingleTickerProviderStateMixin, _Looping {
   Widget _avatar(String letter, List<Color> colors) => Container(
-        width: 58,
-        height: 58,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: colors)),
-        child: Text(letter, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: UsapColors.ink950)),
-      );
+    width: 58,
+    height: 58,
+    alignment: Alignment.center,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      gradient: LinearGradient(colors: colors),
+    ),
+    child: Text(
+      letter,
+      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -468,15 +512,15 @@ class _PrivacyArtState extends State<_PrivacyArt> with SingleTickerProviderState
           decoration: BoxDecoration(
             color: UsapColors.ink900,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFF34D399).withValues(alpha: 0.4)),
+            border: Border.all(color: UsapColors.hanko.withValues(alpha: 0.4)),
           ),
-          child: const Icon(Icons.verified_user_outlined, color: Color(0xFF6EE7B7), size: 28),
+          child: const Icon(Icons.verified_user_outlined, color: UsapColors.hanko, size: 28),
         ),
         const SizedBox(height: 18),
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _avatar('A', const [Color(0xFF38BDF8), Color(0xFF67E8F9)]),
+            _avatar('A', const [UsapColors.hanko, UsapColors.hanko]),
             SizedBox(
               width: 120,
               height: 20,
@@ -485,7 +529,7 @@ class _PrivacyArtState extends State<_PrivacyArt> with SingleTickerProviderState
                 builder: (context, _) => CustomPaint(painter: _StreamPainter(loop.value)),
               ),
             ),
-            _avatar('K', const [Color(0xFF8B5CF6), Color(0xFFE879F9)]),
+            _avatar('K', const [UsapColors.text, UsapColors.text]),
           ],
         ),
       ],
@@ -502,13 +546,21 @@ class _StreamPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final y = size.height / 2;
-    canvas.drawLine(Offset(8, y), Offset(size.width - 8, y), Paint()
-      ..color = Colors.white12
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round);
+    canvas.drawLine(
+      Offset(8, y),
+      Offset(size.width - 8, y),
+      Paint()
+        ..color = Colors.black12
+        ..strokeWidth = 3
+        ..strokeCap = StrokeCap.round,
+    );
     for (final phase in [0.0, 0.33, 0.66]) {
       final x = 8 + (size.width - 16) * ((t + phase) % 1);
-      canvas.drawCircle(Offset(x, y), 3.5, Paint()..color = Color.lerp(UsapColors.sky, UsapColors.violet, (t + phase) % 1)!);
+      canvas.drawCircle(
+        Offset(x, y),
+        3.5,
+        Paint()..color = Color.lerp(UsapColors.sky, UsapColors.violet, (t + phase) % 1)!,
+      );
     }
   }
 

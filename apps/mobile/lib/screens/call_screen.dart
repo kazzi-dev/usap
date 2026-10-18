@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../theme.dart';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
@@ -64,12 +67,17 @@ class _CallScreenState extends State<CallScreen> {
       listenable: _session,
       builder: (context, _) {
         final s = _session;
-        return Scaffold(
-          body: SafeArea(
-            child: switch (s.status) {
-              CallStatus.ended || CallStatus.roomFull || CallStatus.error => _CallOver(session: s, onRejoin: _rejoin),
-              _ => _buildCall(s),
-            },
+        // The call screen stays dark, like most video apps.
+        return Theme(
+          data: usapCallTheme(),
+          child: Scaffold(
+            backgroundColor: Colors.black,
+            body: SafeArea(
+              child: switch (s.status) {
+                CallStatus.ended || CallStatus.roomFull || CallStatus.error => _CallOver(session: s, onRejoin: _rejoin),
+                _ => _buildCall(s),
+              },
+            ),
           ),
         );
       },
@@ -89,9 +97,14 @@ class _CallScreenState extends State<CallScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(widget.roomId, style: const TextStyle(fontFamily: 'monospace', color: Colors.white70)),
-                    Text('${_statusLabel(s.status)} · Subtitles: ${_captionLabel(s)}',
-                        style: const TextStyle(fontSize: 12, color: Colors.white54)),
+                    Text(
+                      widget.roomId,
+                      style: const TextStyle(fontFamily: 'monospace', color: Colors.white70),
+                    ),
+                    Text(
+                      '${_statusLabel(s.status)} · Subtitles: ${_captionLabel(s)}',
+                      style: const TextStyle(fontSize: 12, color: Colors.white54),
+                    ),
                     if (s.recording)
                       const Row(
                         children: [
@@ -135,7 +148,12 @@ class _CallScreenState extends State<CallScreen> {
                     _Avatar(name: s.remote!.name),
                   if (message != null)
                     // Leaves room on the right for the self-view tile.
-                    Positioned(top: 16, left: 16, right: 124, child: Center(child: _Pill(text: message))),
+                    Positioned(
+                      top: 16,
+                      left: 16,
+                      right: 124,
+                      child: Center(child: _Pill(text: message)),
+                    ),
                   Positioned(
                     top: 12,
                     right: 12,
@@ -149,8 +167,11 @@ class _CallScreenState extends State<CallScreen> {
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: s.localMedia.video
-                          ? RTCVideoView(s.localRenderer,
-                              mirror: true, objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover)
+                          ? RTCVideoView(
+                              s.localRenderer,
+                              mirror: true,
+                              objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                            )
                           : _Avatar(name: widget.name, small: true),
                     ),
                   ),
@@ -215,27 +236,28 @@ class _CallScreenState extends State<CallScreen> {
       CallStatus.starting => 'Starting camera and joining…',
       CallStatus.waiting => 'Waiting for someone to join. Share the invite link.',
       CallStatus.connecting => 'Connecting to $other…',
-      CallStatus.reconnecting => s.remote?.signalConnected == false
-          ? '$other lost their connection. Waiting for them…'
-          : 'Connection interrupted. Reconnecting…',
+      CallStatus.reconnecting =>
+        s.remote?.signalConnected == false
+            ? '$other lost their connection. Waiting for them…'
+            : 'Connection interrupted. Reconnecting…',
       _ => null,
     };
   }
 
   static String _statusLabel(CallStatus status) => switch (status) {
-        CallStatus.connected => 'Connected',
-        CallStatus.connecting => 'Connecting',
-        CallStatus.reconnecting => 'Reconnecting',
-        CallStatus.waiting => 'Waiting',
-        _ => 'Starting',
-      };
+    CallStatus.connected => 'Connected',
+    CallStatus.connecting => 'Connecting',
+    CallStatus.reconnecting => 'Reconnecting',
+    CallStatus.waiting => 'Waiting',
+    _ => 'Starting',
+  };
 
   static String _captionLabel(CallSession s) => switch (s.captionStatus) {
-        CaptionStatus.on => s.localSpeaking ? 'hearing you…' : 'listening',
-        CaptionStatus.starting => 'starting',
-        CaptionStatus.unavailable => 'unavailable',
-        CaptionStatus.off => 'off',
-      };
+    CaptionStatus.on => s.localSpeaking ? 'hearing you…' : 'listening',
+    CaptionStatus.starting => 'starting',
+    CaptionStatus.unavailable => 'unavailable',
+    CaptionStatus.off => 'off',
+  };
 }
 
 class _CallOver extends StatelessWidget {
@@ -260,13 +282,20 @@ class _CallOver extends StatelessWidget {
             Text(title, style: Theme.of(context).textTheme.headlineSmall),
             if (detail != null) ...[
               const SizedBox(height: 8),
-              Text(detail, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white60)),
+              Text(
+                detail,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white60),
+              ),
             ],
             const SizedBox(height: 24),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                FilledButton(onPressed: onRejoin, child: Text(session.status == CallStatus.ended ? 'Rejoin' : 'Try again')),
+                FilledButton(
+                  onPressed: onRejoin,
+                  child: Text(session.status == CallStatus.ended ? 'Rejoin' : 'Try again'),
+                ),
                 const SizedBox(width: 12),
                 OutlinedButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Home')),
               ],
@@ -286,12 +315,12 @@ class _Banner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        width: double.infinity,
-        margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(8)),
-        child: Text(text, style: const TextStyle(fontSize: 13)),
-      );
+    width: double.infinity,
+    margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+    padding: const EdgeInsets.all(10),
+    decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(8)),
+    child: Text(text, style: const TextStyle(fontSize: 13)),
+  );
 }
 
 class _Pill extends StatelessWidget {
@@ -301,10 +330,10 @@ class _Pill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.7), borderRadius: BorderRadius.circular(999)),
-        child: Text(text, textAlign: TextAlign.center, style: const TextStyle(fontSize: 13)),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+    decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.7), borderRadius: BorderRadius.circular(999)),
+    child: Text(text, textAlign: TextAlign.center, style: const TextStyle(fontSize: 13)),
+  );
 }
 
 class _Avatar extends StatelessWidget {
@@ -322,7 +351,10 @@ class _Avatar extends StatelessWidget {
       child: CircleAvatar(
         radius: small ? 22 : 40,
         backgroundColor: const Color(0xFF525252),
-        child: Text(initial, style: TextStyle(fontSize: small ? 18 : 32, color: Colors.white)),
+        child: Text(
+          initial,
+          style: TextStyle(fontSize: small ? 18 : 32, color: Colors.white),
+        ),
       ),
     );
   }

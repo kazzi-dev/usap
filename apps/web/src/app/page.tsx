@@ -53,7 +53,7 @@ export default function Home() {
   };
 
   return (
-    <main className="relative isolate min-h-dvh overflow-hidden text-white">
+    <main className="relative isolate min-h-dvh overflow-hidden text-neutral-950">
       <Aurora />
       <OnboardingGate replay={replayIntro} onReplayDone={() => setReplayIntro(false)} />
 
@@ -65,42 +65,42 @@ export default function Home() {
       {/* Hero */}
       <section className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-5 pb-16 pt-6 lg:grid-cols-[1.05fr_1fr] lg:pt-14">
         <div>
-          <p className="animate-fade-up inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
+          <p className="animate-fade-up inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-100 px-3 py-1 text-xs text-neutral-700">
             <span className="size-1.5 rounded-full bg-emerald-400" /> Live translated video calls · free
           </p>
           <h1 className="animate-fade-up mt-5 text-4xl font-semibold leading-[1.08] tracking-tight [animation-delay:80ms] sm:text-6xl">
             Talk to anyone.
             <br />
-            <span className="text-gradient animate-gradient">Read them in your language.</span>
+            <span className="text-hanko">Read them in your language.</span>
           </h1>
-          <p className="animate-fade-up mt-5 max-w-xl text-lg text-slate-300 [animation-delay:160ms]">
+          <p className="animate-fade-up mt-5 max-w-xl text-lg text-neutral-700 [animation-delay:160ms]">
             Usap turns what each person says into live subtitles, translated for the other person. No
             accounts needed to call.
           </p>
 
           <ul className="animate-fade-up mt-5 flex flex-wrap gap-2 [animation-delay:220ms]" aria-label="Supported languages">
             {LANGUAGES.map((l) => (
-              <li key={l} className="rounded-full bg-white/5 px-3 py-1 text-sm text-slate-200 ring-1 ring-white/10">
+              <li key={l} className="rounded-full bg-neutral-100 px-3 py-1 text-sm text-neutral-700 ring-1 ring-neutral-200">
                 {l}
               </li>
             ))}
           </ul>
 
           {/* Start / join */}
-          <div className="animate-fade-up mt-8 max-w-md rounded-3xl border border-white/10 bg-ink-900/70 p-4 shadow-xl backdrop-blur [animation-delay:280ms]">
+          <div className="animate-fade-up mt-8 max-w-md rounded-3xl border border-neutral-200 bg-white p-4 [animation-delay:280ms]">
             <button
               type="button"
               onClick={createCall}
-              className="bg-brand animate-gradient group flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-4 text-base font-semibold shadow-lg shadow-violet-900/40 transition hover:brightness-110"
+              className="bg-neutral-950 text-white hover:bg-neutral-800 group flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-4 text-base font-semibold transition hover:brightness-110"
             >
               Start a new call
               <svg viewBox="0 0 20 20" className="size-5 transition group-hover:translate-x-0.5" fill="currentColor" aria-hidden="true">
                 <path d="M11.3 4.3 16 9l-4.7 4.7-1-1L13.2 9.8H4V8.2h9.2L10.3 5.3z" />
               </svg>
             </button>
-            <div className="my-3 flex items-center gap-3 text-xs text-slate-500">
-              <div className="h-px flex-1 bg-white/10" /> or join with a link
-              <div className="h-px flex-1 bg-white/10" />
+            <div className="my-3 flex items-center gap-3 text-xs text-neutral-500">
+              <div className="h-px flex-1 bg-neutral-100" /> or join with a link
+              <div className="h-px flex-1 bg-neutral-100" />
             </div>
             <form onSubmit={joinCall} className="flex gap-2">
               <input
@@ -112,9 +112,9 @@ export default function Home() {
                 placeholder="Invite link or room code"
                 aria-label="Invite link or room code"
                 aria-invalid={!!error}
-                className="min-w-0 flex-1 rounded-xl border border-white/10 bg-ink-800 px-3 py-3 outline-none transition focus:border-sky-400"
+                className="min-w-0 flex-1 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-3 outline-none transition focus:border-neutral-900"
               />
-              <button type="submit" className="rounded-xl bg-white/10 px-4 py-3 font-medium transition hover:bg-white/15">
+              <button type="submit" className="rounded-xl bg-neutral-100 px-4 py-3 font-medium transition hover:bg-neutral-200">
                 Join
               </button>
             </form>
@@ -136,15 +136,15 @@ export default function Home() {
           {FEATURES.map((f) => (
             <div
               key={f.title}
-              className="rounded-2xl border border-white/10 bg-ink-900/60 p-5 transition hover:-translate-y-0.5 hover:border-white/20"
+              className="rounded-2xl border border-neutral-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-neutral-400"
             >
-              <div className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400/20 to-violet-500/20 ring-1 ring-white/10">
-                <svg viewBox="0 0 24 24" className="size-5 text-sky-300" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-neutral-100 ring-1 ring-neutral-200">
+                <svg viewBox="0 0 24 24" className="size-5 text-hanko" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d={f.icon} />
                 </svg>
               </div>
               <h3 className="mt-4 font-semibold">{f.title}</h3>
-              <p className="mt-1 text-sm text-slate-400">{f.body}</p>
+              <p className="mt-1 text-sm text-neutral-500">{f.body}</p>
             </div>
           ))}
         </div>
@@ -161,19 +161,19 @@ export default function Home() {
             ["Talk normally", "Each of you speaks your own language. No buttons to hold."],
             ["Read along", "Subtitles appear for both of you, translated for each person."],
           ].map(([title, body], i) => (
-            <li key={title} className="relative rounded-2xl border border-white/10 p-5">
-              <span className="text-gradient text-3xl font-semibold">{String(i + 1).padStart(2, "0")}</span>
+            <li key={title} className="relative rounded-2xl border border-neutral-200 p-5">
+              <span className="text-hanko text-3xl font-semibold">{String(i + 1).padStart(2, "0")}</span>
               <h3 className="mt-2 font-semibold">{title}</h3>
-              <p className="mt-1 text-sm text-slate-400">{body}</p>
+              <p className="mt-1 text-sm text-neutral-500">{body}</p>
             </li>
           ))}
         </ol>
       </section>
 
-      <footer className="border-t border-white/5">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-5 py-6 text-sm text-slate-500 sm:flex-row">
+      <footer className="border-t border-neutral-200">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-5 py-6 text-sm text-neutral-500 sm:flex-row">
           <span>Usap · a portfolio project. Built with free tools only.</span>
-          <button type="button" onClick={() => setReplayIntro(true)} className="hover:text-white">
+          <button type="button" onClick={() => setReplayIntro(true)} className="hover:text-neutral-950">
             Replay the intro
           </button>
         </div>

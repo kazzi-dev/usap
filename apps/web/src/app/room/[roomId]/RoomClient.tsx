@@ -76,12 +76,12 @@ function PreJoin(props: {
   onJoin: () => void;
 }) {
   return (
-    <main className="relative isolate flex min-h-dvh items-center justify-center overflow-hidden px-4 py-10 text-white">
+    <main className="relative isolate flex min-h-dvh items-center justify-center overflow-hidden px-4 py-10 text-neutral-950">
       <Aurora />
       {/* First time here (e.g. opened an invite link)? Explain Usap before joining. */}
       <OnboardingGate />
       <form
-        className="animate-fade-up w-full max-w-md rounded-3xl border border-white/10 bg-ink-900/75 p-6 shadow-2xl backdrop-blur sm:p-8"
+        className="animate-fade-up w-full max-w-md rounded-3xl border border-neutral-200 bg-white p-6 sm:p-8"
         onSubmit={(e) => {
           e.preventDefault();
           props.onJoin();
@@ -90,12 +90,12 @@ function PreJoin(props: {
         <Link href="/" className="inline-block" aria-label="Usap home">
           <Logo />
         </Link>
-        <p className="mt-6 text-sm text-slate-400">You&apos;re joining</p>
-        <h1 className="mt-1 inline-flex rounded-xl bg-white/5 px-3 py-1.5 font-mono text-xl tracking-wide ring-1 ring-white/10">
+        <p className="mt-6 text-sm text-neutral-500">You&apos;re joining</p>
+        <h1 className="mt-1 inline-flex rounded-xl bg-neutral-100 px-3 py-1.5 font-mono text-xl tracking-wide ring-1 ring-neutral-200">
           {props.roomId}
         </h1>
 
-        <label className="mt-6 block text-sm font-medium text-slate-200" htmlFor="name">
+        <label className="mt-6 block text-sm font-medium text-neutral-700" htmlFor="name">
           Your name
         </label>
         <input
@@ -105,27 +105,27 @@ function PreJoin(props: {
           maxLength={40}
           placeholder="e.g. Ana"
           autoFocus
-          className="mt-1.5 w-full rounded-xl border border-white/10 bg-ink-800 px-3 py-3 outline-none transition focus:border-sky-400"
+          className="mt-1.5 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-3 outline-none transition focus:border-neutral-900"
         />
-        <label className="mt-4 block text-sm font-medium text-slate-200" htmlFor="language">
+        <label className="mt-4 block text-sm font-medium text-neutral-700" htmlFor="language">
           Language you speak
         </label>
         <LanguageSelect
           id="language"
           value={props.language}
           onChange={props.onLanguageChange}
-          className="mt-1.5 w-full rounded-xl px-3 py-3"
+          className="mt-1.5 w-full rounded-xl border-neutral-300! bg-white! px-3 py-3 text-neutral-950!"
         />
-        <p className="mt-1.5 text-xs text-slate-500">Subtitles will be shown to you in this language too.</p>
+        <p className="mt-1.5 text-xs text-neutral-500">Subtitles will be shown to you in this language too.</p>
 
         <button
           type="submit"
-          className="bg-brand animate-gradient mt-6 w-full rounded-2xl px-4 py-3.5 font-semibold shadow-lg shadow-violet-900/40 transition hover:brightness-110"
+          className="bg-neutral-950 text-white hover:bg-neutral-800 mt-6 w-full rounded-2xl px-4 py-3.5 font-semibold transition hover:brightness-110"
         >
           Join call
         </button>
 
-        <ul className="mt-5 space-y-1.5 text-xs text-slate-400">
+        <ul className="mt-5 space-y-1.5 text-xs text-neutral-500">
           <li>• Your browser will ask for camera and microphone access.</li>
           <li>• Speak normally: subtitles appear for both of you, translated.</li>
           <li>• You can mute, turn off the camera, or change language anytime.</li>

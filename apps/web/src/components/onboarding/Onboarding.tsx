@@ -59,11 +59,11 @@ export function Onboarding({ onClose, initialStep = 0 }: OnboardingProps) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="onboarding-title"
-      className="animate-fade-in fixed inset-0 z-50 flex items-end justify-center bg-ink-950/80 p-0 backdrop-blur-sm sm:items-center sm:p-6"
+      className="animate-fade-in fixed inset-0 z-50 flex items-end justify-center bg-neutral-950/40 p-0 sm:items-center sm:p-6"
     >
-      <div className="relative w-full max-w-lg overflow-hidden rounded-t-3xl border border-white/10 bg-ink-900 shadow-2xl sm:rounded-3xl">
+      <div className="relative w-full max-w-lg overflow-hidden rounded-t-3xl border border-neutral-200 bg-white sm:rounded-3xl">
         {/* Illustration area */}
-        <div className="relative flex h-60 items-center justify-center overflow-hidden bg-gradient-to-br from-sky-500/15 via-ink-800 to-violet-600/20">
+        <div className="relative flex h-60 items-center justify-center overflow-hidden bg-neutral-50">
           <div key={step} className="animate-fade-up">
             {STEPS[step] === "welcome" && <WelcomeArt />}
             {STEPS[step] === "speak" && <SpeakArt />}
@@ -76,10 +76,10 @@ export function Onboarding({ onClose, initialStep = 0 }: OnboardingProps) {
         <div key={`text-${step}`} className="animate-fade-up px-6 pb-2 pt-6 [animation-delay:80ms]">
           {STEPS[step] === "welcome" && (
             <>
-              <h2 id="onboarding-title" className="text-2xl font-semibold text-white">
-                Welcome to <span className="text-gradient">Usap</span>
+              <h2 id="onboarding-title" className="text-2xl font-semibold text-neutral-950">
+                Welcome to <span className="text-hanko">Usap</span>
               </h2>
-              <p className="mt-2 text-slate-300">
+              <p className="mt-2 text-neutral-700">
                 Video calls where everyone reads the conversation in their own language: English, Tagalog,
                 Bisaya or Japanese.
               </p>
@@ -87,10 +87,10 @@ export function Onboarding({ onClose, initialStep = 0 }: OnboardingProps) {
           )}
           {STEPS[step] === "speak" && (
             <>
-              <h2 id="onboarding-title" className="text-2xl font-semibold text-white">
+              <h2 id="onboarding-title" className="text-2xl font-semibold text-neutral-950">
                 Just talk naturally
               </h2>
-              <p className="mt-2 text-slate-300">
+              <p className="mt-2 text-neutral-700">
                 About a second after you pause, your words appear as subtitles on the other person&apos;s screen,
                 translated for them. You see what they say in your language.
               </p>
@@ -98,10 +98,10 @@ export function Onboarding({ onClose, initialStep = 0 }: OnboardingProps) {
           )}
           {STEPS[step] === "language" && (
             <>
-              <h2 id="onboarding-title" className="text-2xl font-semibold text-white">
+              <h2 id="onboarding-title" className="text-2xl font-semibold text-neutral-950">
                 Which language do you speak?
               </h2>
-              <p className="mt-1 text-sm text-slate-400">You&apos;ll read subtitles in it too. You can change it anytime.</p>
+              <p className="mt-1 text-sm text-neutral-500">You&apos;ll read subtitles in it too. You can change it anytime.</p>
               <div role="radiogroup" aria-label="Your language" className="mt-4 grid grid-cols-2 gap-2">
                 {GREETINGS.map((g) => (
                   <button
@@ -112,12 +112,12 @@ export function Onboarding({ onClose, initialStep = 0 }: OnboardingProps) {
                     onClick={() => pick(g.code)}
                     className={`rounded-2xl border px-4 py-3 text-left transition ${
                       language === g.code
-                        ? "border-sky-400 bg-sky-400/10 shadow-lg shadow-sky-500/10"
-                        : "border-white/10 bg-ink-800 hover:border-white/25"
+                        ? "border-neutral-900 bg-hanko/5"
+                        : "border-neutral-200 bg-neutral-50 hover:border-neutral-400"
                     }`}
                   >
-                    <span className="block font-medium text-white">{g.native}</span>
-                    <span className="block text-sm text-slate-400">{g.hello}</span>
+                    <span className="block font-medium text-neutral-950">{g.native}</span>
+                    <span className="block text-sm text-neutral-500">{g.hello}</span>
                   </button>
                 ))}
               </div>
@@ -125,10 +125,10 @@ export function Onboarding({ onClose, initialStep = 0 }: OnboardingProps) {
           )}
           {STEPS[step] === "privacy" && (
             <>
-              <h2 id="onboarding-title" className="text-2xl font-semibold text-white">
+              <h2 id="onboarding-title" className="text-2xl font-semibold text-neutral-950">
                 Private by design
               </h2>
-              <ul className="mt-3 space-y-2 text-sm text-slate-300">
+              <ul className="mt-3 space-y-2 text-sm text-neutral-700">
                 <li className="flex gap-2">
                   <Check /> Video goes directly between you and the other person.
                 </li>
@@ -146,14 +146,14 @@ export function Onboarding({ onClose, initialStep = 0 }: OnboardingProps) {
 
         {/* Controls */}
         <div className="flex items-center justify-between gap-3 px-6 pb-6 pt-5">
-          <button type="button" onClick={step === 0 ? onClose : back} className="text-sm text-slate-400 hover:text-white">
+          <button type="button" onClick={step === 0 ? onClose : back} className="text-sm text-neutral-500 hover:text-neutral-950">
             {step === 0 ? "Skip" : "Back"}
           </button>
           <div className="flex gap-1.5" aria-label={`Step ${step + 1} of ${STEPS.length}`}>
             {STEPS.map((s, i) => (
               <span
                 key={s}
-                className={`h-1.5 rounded-full transition-all duration-300 ${i === step ? "w-6 bg-sky-400" : "w-1.5 bg-white/20"}`}
+                className={`h-1.5 rounded-full transition-all duration-300 ${i === step ? "w-6 bg-neutral-900" : "w-1.5 bg-neutral-300"}`}
               />
             ))}
           </div>
@@ -161,7 +161,7 @@ export function Onboarding({ onClose, initialStep = 0 }: OnboardingProps) {
             ref={nextButton}
             type="button"
             onClick={next}
-            className="bg-brand animate-gradient rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-900/40 transition hover:brightness-110"
+            className="bg-neutral-950 text-white hover:bg-neutral-800 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
           >
             {last ? "Start using Usap" : "Next"}
           </button>
@@ -173,7 +173,7 @@ export function Onboarding({ onClose, initialStep = 0 }: OnboardingProps) {
 
 function Check() {
   return (
-    <svg viewBox="0 0 20 20" className="mt-0.5 size-4 shrink-0 text-emerald-400" fill="currentColor" aria-hidden="true">
+    <svg viewBox="0 0 20 20" className="mt-0.5 size-4 shrink-0 text-hanko" fill="currentColor" aria-hidden="true">
       <path d="M8 13.2 4.8 10l-1.1 1.1L8 15.4l8.3-8.3-1.1-1.1z" />
     </svg>
   );
@@ -190,15 +190,15 @@ function WelcomeArt() {
   ];
   return (
     <div aria-hidden="true" className="relative flex h-60 w-[min(32rem,100vw)] items-center justify-center">
-      <span className="animate-pulse-ring absolute size-24 rounded-full bg-sky-400/30" />
-      <span className="animate-pulse-ring absolute size-24 rounded-full bg-violet-500/30 [animation-delay:1.2s]" />
-      <div className="relative rounded-3xl bg-ink-900/60 p-4 shadow-2xl ring-1 ring-white/10">
+      <span className="animate-pulse-ring absolute size-24 rounded-full bg-hanko/20" />
+      <span className="animate-pulse-ring absolute size-24 rounded-full bg-neutral-900/10 [animation-delay:1.2s]" />
+      <div className="relative rounded-3xl bg-white p-4 ring-1 ring-neutral-200">
         <LogoMark className="size-16" />
       </div>
       {bubbles.map((b) => (
         <span
           key={b.text}
-          className={`animate-float absolute rounded-full border border-white/10 bg-ink-800/90 px-3 py-1 text-sm text-slate-200 shadow-lg ${b.cls}`}
+          className={`animate-float absolute rounded-full border border-neutral-200 bg-white px-3 py-1 text-sm text-neutral-700 ${b.cls}`}
           style={{ animationDelay: b.delay }}
         >
           {b.text}
@@ -212,8 +212,8 @@ function SpeakArt() {
   return (
     <div aria-hidden="true" className="flex items-center gap-4 px-6">
       <div className="flex flex-col items-center gap-2">
-        <div className="flex size-16 items-center justify-center rounded-full bg-sky-400/15 ring-1 ring-sky-300/30">
-          <svg viewBox="0 0 24 24" className="size-7 text-sky-300" fill="none" stroke="currentColor" strokeWidth="2">
+        <div className="flex size-16 items-center justify-center rounded-full bg-neutral-100 ring-1 ring-neutral-200">
+          <svg viewBox="0 0 24 24" className="size-7 text-hanko" fill="none" stroke="currentColor" strokeWidth="2">
             <rect x="9" y="2" width="6" height="12" rx="3" />
             <path d="M5 10a7 7 0 0 0 14 0M12 17v4" strokeLinecap="round" />
           </svg>
@@ -222,18 +222,18 @@ function SpeakArt() {
           {[0, 1, 2, 3, 4].map((i) => (
             <span
               key={i}
-              className="animate-wave h-full w-1.5 origin-bottom rounded-full bg-gradient-to-t from-sky-400 to-violet-400"
+              className="animate-wave h-full w-1.5 origin-bottom rounded-full bg-hanko"
               style={{ animationDelay: `${i * 110}ms` }}
             />
           ))}
         </span>
       </div>
-      <svg viewBox="0 0 40 12" className="w-10 text-slate-500" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg viewBox="0 0 40 12" className="w-10 text-neutral-500" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M0 6h36m-5-5 5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
       <div className="w-56 space-y-2">
-        <div className="rounded-xl bg-ink-700/80 px-3 py-2 text-xs text-slate-300">Kumusta ka? Kumain ka na ba?</div>
-        <div className="animate-fade-up rounded-xl border border-sky-400/30 bg-sky-400/10 px-3 py-2 text-sm font-medium text-white [animation-delay:400ms]">
+        <div className="rounded-xl bg-neutral-100 px-3 py-2 text-xs text-neutral-700">Kumusta ka? Kumain ka na ba?</div>
+        <div className="animate-fade-up rounded-xl border border-hanko/30 bg-hanko/5 px-3 py-2 text-sm font-medium text-neutral-950 [animation-delay:400ms]">
           How are you? Have you eaten yet?
         </div>
       </div>
@@ -245,7 +245,7 @@ function LanguageArt({ code }: { code: LanguageCode }) {
   const current = GREETINGS.find((g) => g.code === code) ?? GREETINGS[0];
   return (
     <div aria-hidden="true" className="flex flex-col items-center gap-3">
-      <div key={code} className="animate-fade-up text-4xl font-semibold text-white">
+      <div key={code} className="animate-fade-up text-4xl font-semibold text-neutral-950">
         {current.hello}
       </div>
       <div className="flex gap-2">
@@ -253,7 +253,7 @@ function LanguageArt({ code }: { code: LanguageCode }) {
           <span
             key={g.code}
             className={`rounded-full px-3 py-1 text-xs transition ${
-              g.code === code ? "bg-sky-400 text-ink-950" : "bg-white/10 text-slate-300"
+              g.code === code ? "bg-neutral-900 text-white" : "bg-neutral-100 text-neutral-700"
             }`}
           >
             {g.native}
@@ -267,17 +267,17 @@ function LanguageArt({ code }: { code: LanguageCode }) {
 function PrivacyArt() {
   return (
     <div aria-hidden="true" className="relative flex items-center gap-6">
-      <div className="flex size-14 items-center justify-center rounded-full bg-gradient-to-br from-sky-400 to-cyan-300 text-lg font-semibold text-ink-950">
+      <div className="flex size-14 items-center justify-center rounded-full bg-neutral-900 !text-white text-lg font-semibold text-white">
         A
       </div>
-      <div className="relative h-1 w-28 overflow-hidden rounded-full bg-white/10">
-        <span className="animate-gradient bg-brand absolute inset-0" />
+      <div className="relative h-1 w-28 overflow-hidden rounded-full bg-neutral-100">
+        <span className="bg-neutral-900 absolute inset-0" />
       </div>
-      <div className="flex size-14 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-400 text-lg font-semibold text-ink-950">
+      <div className="flex size-14 items-center justify-center rounded-full bg-hanko !text-white text-lg font-semibold text-white">
         K
       </div>
-      <div className="absolute -top-14 left-1/2 flex size-12 -translate-x-1/2 items-center justify-center rounded-2xl bg-ink-900 ring-1 ring-emerald-400/40">
-        <svg viewBox="0 0 24 24" className="size-6 text-emerald-300" fill="none" stroke="currentColor" strokeWidth="2">
+      <div className="absolute -top-14 left-1/2 flex size-12 -translate-x-1/2 items-center justify-center rounded-2xl bg-white ring-1 ring-hanko/30">
+        <svg viewBox="0 0 24 24" className="size-6 text-hanko" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z" strokeLinejoin="round" />
           <path d="m9 12 2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
         </svg>

@@ -9,10 +9,10 @@ import { useSession } from "@/lib/session";
 import { useApi } from "@/lib/use-api";
 
 const SUMMARY_BADGE: Record<CallListItem["summaryStatus"], [string, string]> = {
-  ready: ["bg-emerald-900/60 text-emerald-200", "Summary ready"],
-  pending: ["bg-neutral-800 text-neutral-300", "Summarizing…"],
-  failed: ["bg-amber-900/60 text-amber-200", "Summary failed"],
-  skipped: ["bg-neutral-800 text-neutral-400", "No summary"],
+  ready: ["bg-emerald-100 text-emerald-800", "Summary ready"],
+  pending: ["bg-neutral-100 text-neutral-600", "Summarizing…"],
+  failed: ["bg-amber-100 text-amber-800", "Summary failed"],
+  skipped: ["bg-neutral-100 text-neutral-500", "No summary"],
 };
 
 export default function HistoryPage() {
@@ -20,7 +20,7 @@ export default function HistoryPage() {
   const { data: calls, error, loading } = useApi<CallListItem[]>(session ? "/api/calls" : null);
 
   return (
-    <main className="min-h-dvh bg-neutral-950 px-4 py-6 text-white">
+    <main className="min-h-dvh bg-white px-4 py-6 text-neutral-950">
       <div className="mx-auto max-w-2xl">
         <header className="flex items-center justify-between">
           <Link href="/" className="text-xl font-bold">
@@ -32,20 +32,20 @@ export default function HistoryPage() {
         <h1 className="mt-8 text-2xl font-semibold">Call history</h1>
 
         {!session ? (
-          <p className="mt-4 text-neutral-400">
-            <Link href="/login?next=/history" className="text-sky-400 hover:underline">
+          <p className="mt-4 text-neutral-500">
+            <Link href="/login?next=/history" className="text-hanko hover:underline">
               Log in
             </Link>{" "}
             to see your calls, transcripts and summaries.
           </p>
         ) : loading ? (
-          <p className="mt-4 text-neutral-400">Loading…</p>
+          <p className="mt-4 text-neutral-500">Loading…</p>
         ) : error ? (
-          <p className="mt-4 text-red-400">{error.message}</p>
+          <p className="mt-4 text-hanko">{error.message}</p>
         ) : !calls?.length ? (
-          <p className="mt-4 text-neutral-400">
+          <p className="mt-4 text-neutral-500">
             No saved calls yet. Calls are saved when you&apos;re logged in and someone joins you.{" "}
-            <Link href="/" className="text-sky-400 hover:underline">
+            <Link href="/" className="text-hanko hover:underline">
               Start a call
             </Link>
           </p>
@@ -58,7 +58,7 @@ export default function HistoryPage() {
                 <li key={call.id}>
                   <Link
                     href={`/history/${call.id}`}
-                    className="block rounded-xl border border-neutral-800 bg-neutral-900 p-4 hover:border-neutral-600"
+                    className="block rounded-xl border border-neutral-200 bg-neutral-50 p-4 hover:border-neutral-400"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -69,7 +69,7 @@ export default function HistoryPage() {
                                 .join(", ")}`
                             : "Call"}
                         </p>
-                        <p className="mt-1 text-sm text-neutral-400">
+                        <p className="mt-1 text-sm text-neutral-500">
                           {formatDateTime(call.startedAt)} · {formatDuration(call.startedAt, call.endedAt)} ·{" "}
                           {call.lineCount} {call.lineCount === 1 ? "line" : "lines"}
                         </p>

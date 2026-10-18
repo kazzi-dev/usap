@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 
 import '../theme.dart';
@@ -12,8 +10,10 @@ class LogoMark extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(BuildContext context) =>
-      SizedBox.square(dimension: size, child: CustomPaint(painter: _LogoPainter()));
+  Widget build(BuildContext context) => SizedBox.square(
+    dimension: size,
+    child: CustomPaint(painter: _LogoPainter()),
+  );
 }
 
 class _LogoPainter extends CustomPainter {
@@ -21,26 +21,23 @@ class _LogoPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     canvas.scale(size.width / 40);
 
-    // Back bubble ("the other person"): light, with its tail bottom-right.
+    // Back bubble ("the other person"): seal red, with its tail bottom-right.
     final back = Path()
       ..addRRect(RRect.fromLTRBR(10, 15, 37, 33, const Radius.circular(6)))
       ..moveTo(30, 32)
       ..lineTo(30, 37.5)
       ..lineTo(24.5, 32)
       ..close();
-    canvas.drawPath(back, Paint()..color = const Color(0xFFDBEAFE).withValues(alpha: 0.92));
+    canvas.drawPath(back, Paint()..color = UsapColors.hanko);
 
-    // Front bubble: brand gradient, tail bottom-left.
+    // Front bubble: ink black, tail bottom-left.
     final front = Path()
       ..addRRect(RRect.fromLTRBR(3, 3, 29, 22, const Radius.circular(6)))
       ..moveTo(15, 21)
       ..lineTo(9, 26.5)
       ..lineTo(9, 21)
       ..close();
-    canvas.drawPath(
-      front,
-      Paint()..shader = const LinearGradient(colors: [UsapColors.sky, UsapColors.violet]).createShader(const Rect.fromLTWH(3, 3, 26, 24)),
-    );
+    canvas.drawPath(front, Paint()..color = UsapColors.text);
 
     final dot = Paint()..color = Colors.white;
     for (final x in [11.0, 16.0, 21.0]) {
@@ -58,16 +55,19 @@ class Logo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          LogoMark(),
-          SizedBox(width: 8),
-          Text('Usap', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white)),
-        ],
-      );
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      LogoMark(),
+      SizedBox(width: 8),
+      Text(
+        'Usap',
+        style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: UsapColors.text),
+      ),
+    ],
+  );
 }
 
-/// Text painted with the brand gradient.
+/// Highlighted text, in the seal-red accent (flat, no gradient).
 class GradientText extends StatelessWidget {
   const GradientText(this.text, {super.key, required this.style});
 
@@ -75,14 +75,10 @@ class GradientText extends StatelessWidget {
   final TextStyle style;
 
   @override
-  Widget build(BuildContext context) => ShaderMask(
-        blendMode: BlendMode.srcIn,
-        shaderCallback: (bounds) => UsapColors.textGradient.createShader(bounds),
-        child: Text(text, style: style),
-      );
+  Widget build(BuildContext context) => Text(text, style: style.copyWith(color: UsapColors.hanko));
 }
 
-/// Full-width button filled with the brand gradient.
+/// Full-width solid black button.
 class GradientButton extends StatelessWidget {
   const GradientButton({super.key, required this.label, required this.onPressed, this.icon});
 
@@ -94,9 +90,8 @@ class GradientButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        gradient: UsapColors.brandGradient,
+        color: onPressed == null ? Colors.black38 : UsapColors.text,
         borderRadius: BorderRadius.circular(18),
-        boxShadow: [BoxShadow(color: UsapColors.violet.withValues(alpha: 0.35), blurRadius: 24, offset: const Offset(0, 8))],
       ),
       child: Material(
         color: Colors.transparent,
@@ -108,7 +103,10 @@ class GradientButton extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
+                Text(
+                  label,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+                ),
                 if (icon != null) ...[const SizedBox(width: 8), Icon(icon, size: 20, color: Colors.white)],
               ],
             ),
@@ -119,65 +117,12 @@ class GradientButton extends StatelessWidget {
   }
 }
 
-/// Soft colored glows drifting slowly behind a screen (still when the phone
-/// asks for reduced motion).
-class AuroraBackground extends StatefulWidget {
+/// Plain white page background (the flat "ink and hanko" look has no glows).
+class AuroraBackground extends StatelessWidget {
   const AuroraBackground({super.key, required this.child});
 
   final Widget child;
 
   @override
-  State<AuroraBackground> createState() => _AuroraBackgroundState();
-}
-
-class _AuroraBackgroundState extends State<AuroraBackground> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(vsync: this, duration: const Duration(seconds: 14));
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (reduceMotion(context)) {
-      _controller.stop();
-    } else if (!_controller.isAnimating) {
-      _controller.repeat();
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Widget _glow(Color color, double size) => Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: RadialGradient(colors: [color.withValues(alpha: 0.28), color.withValues(alpha: 0)]),
-        ),
-      );
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        const Positioned.fill(child: ColoredBox(color: UsapColors.ink950)),
-        AnimatedBuilder(
-          animation: _controller,
-          builder: (context, _) {
-            final t = _controller.value * 2 * pi;
-            return Stack(
-              children: [
-                Positioned(left: -140 + 30 * sin(t), top: -120 + 25 * cos(t), child: _glow(UsapColors.sky, 420)),
-                Positioned(right: -160 + 30 * cos(t), top: 140 + 30 * sin(t), child: _glow(UsapColors.violet, 420)),
-                Positioned(left: 40 + 20 * sin(t + 1), bottom: -180, child: _glow(UsapColors.pink, 360)),
-              ],
-            );
-          },
-        ),
-        Positioned.fill(child: widget.child),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => ColoredBox(color: UsapColors.ink950, child: child);
 }

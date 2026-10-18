@@ -48,7 +48,7 @@ export function LoginForm() {
 
   const field = (key: keyof typeof form, label: string, props: React.InputHTMLAttributes<HTMLInputElement>) => (
     <div className="mt-4">
-      <label htmlFor={key} className="block text-sm text-neutral-300">
+      <label htmlFor={key} className="block text-sm text-neutral-600">
         {label}
       </label>
       <input
@@ -57,11 +57,11 @@ export function LoginForm() {
         onChange={(e) => setForm({ ...form, [key]: e.target.value })}
         aria-invalid={!!fields[key]}
         aria-describedby={fields[key] ? `${key}-error` : undefined}
-        className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-3 outline-none focus:border-sky-500 aria-invalid:border-red-500"
+        className="mt-1 w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-3 outline-none focus:border-neutral-900 aria-invalid:border-hanko"
         {...props}
       />
       {fields[key] && (
-        <p id={`${key}-error`} className="mt-1 text-sm text-red-400">
+        <p id={`${key}-error`} className="mt-1 text-sm text-hanko">
           {fields[key]}
         </p>
       )}
@@ -69,13 +69,13 @@ export function LoginForm() {
   );
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-neutral-950 px-4 text-white">
+    <main className="flex min-h-dvh items-center justify-center bg-white px-4 text-neutral-950">
       <form onSubmit={submit} className="w-full max-w-sm" noValidate>
-        <Link href="/" className="text-sm text-neutral-400 hover:text-white">
+        <Link href="/" className="text-sm text-neutral-500 hover:text-neutral-950">
           ← Usap
         </Link>
         <h1 className="mt-4 text-2xl font-semibold">{mode === "login" ? "Log in" : "Create an account"}</h1>
-        <p className="mt-1 text-sm text-neutral-400">
+        <p className="mt-1 text-sm text-neutral-500">
           Logged-in calls are saved with a transcript and an AI summary. You can still join calls as a guest.
         </p>
 
@@ -88,7 +88,7 @@ export function LoginForm() {
         })}
 
         {error && !Object.keys(fields).length && (
-          <p role="alert" className="mt-4 text-sm text-red-400">
+          <p role="alert" className="mt-4 text-sm text-hanko">
             {error}
           </p>
         )}
@@ -96,12 +96,12 @@ export function LoginForm() {
         <button
           type="submit"
           disabled={busy}
-          className="mt-6 w-full rounded-lg bg-sky-600 px-4 py-3 font-medium hover:bg-sky-500 disabled:opacity-60"
+          className="mt-6 w-full rounded-lg bg-neutral-950 !text-white px-4 py-3 font-medium hover:bg-neutral-800 disabled:opacity-60"
         >
           {busy ? "Please wait…" : mode === "login" ? "Log in" : "Create account"}
         </button>
 
-        <p className="mt-4 text-center text-sm text-neutral-400">
+        <p className="mt-4 text-center text-sm text-neutral-500">
           {mode === "login" ? "No account yet? " : "Already have an account? "}
           <button
             type="button"
@@ -110,7 +110,7 @@ export function LoginForm() {
               setError(null);
               setFields({});
             }}
-            className="text-sky-400 hover:underline"
+            className="text-hanko hover:underline"
           >
             {mode === "login" ? "Create one" : "Log in"}
           </button>

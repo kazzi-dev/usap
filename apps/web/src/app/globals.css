@@ -6,7 +6,7 @@
 }
 
 /*
- * Usap brand. Deep navy "ink" backgrounds, a sky -> violet accent gradient.
+ * Usap brand: "ink and hanko". White paper, black ink, one seal-red accent.
  * The same values are used in the Flutter app (apps/mobile/lib/theme.dart).
  */
 @theme {
@@ -17,6 +17,7 @@
   --color-ink-600: #2a3656;
   --color-sky-brand: #38bdf8;
   --color-violet-brand: #8b5cf6;
+  --color-hanko: #d93a2b;
 
   --animate-fade-up: fade-up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
   --animate-fade-in: fade-in 0.5s ease-out both;
@@ -91,27 +92,22 @@
 
 /* Text filled with the brand gradient. */
 @utility text-gradient {
-  background-image: linear-gradient(100deg, var(--color-sky-brand), var(--color-violet-brand), #f0abfc);
-  background-size: 200% 200%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--color-hanko);
 }
 
 /* The main call-to-action look. */
 @utility bg-brand {
-  background-image: linear-gradient(110deg, #0ea5e9, var(--color-violet-brand), #0ea5e9);
-  background-size: 200% 200%;
+  background-color: #111111;
 }
 
-/* A call UI is dark in both themes, like most video apps. */
+/* Light pages; the in-call screen sets its own dark colors. */
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
-  background: var(--color-ink-950);
-  color: #e8ecf5;
+  background: #ffffff;
+  color: #111111;
 }
 
 /* People who ask their device for less motion get (almost) none. */

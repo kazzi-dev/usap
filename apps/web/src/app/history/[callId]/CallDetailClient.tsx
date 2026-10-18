@@ -27,26 +27,26 @@ export function CallDetailClient() {
   }, [pending, reload]);
 
   return (
-    <main className="min-h-dvh bg-neutral-950 px-4 py-6 text-white">
+    <main className="min-h-dvh bg-white px-4 py-6 text-neutral-950">
       <div className="mx-auto max-w-2xl">
         <header className="flex items-center justify-between">
-          <Link href="/history" className="text-sm text-neutral-400 hover:text-white">
+          <Link href="/history" className="text-sm text-neutral-500 hover:text-neutral-950">
             ← Call history
           </Link>
           <AccountBar />
         </header>
 
         {!session ? (
-          <p className="mt-8 text-neutral-400">
-            <Link href={`/login?next=/history/${callId}`} className="text-sky-400 hover:underline">
+          <p className="mt-8 text-neutral-500">
+            <Link href={`/login?next=/history/${callId}`} className="text-hanko hover:underline">
               Log in
             </Link>{" "}
             to see this call.
           </p>
         ) : loading && !call ? (
-          <p className="mt-8 text-neutral-400">Loading…</p>
+          <p className="mt-8 text-neutral-500">Loading…</p>
         ) : error ? (
-          <p className="mt-8 text-red-400">{error.message}</p>
+          <p className="mt-8 text-hanko">{error.message}</p>
         ) : call ? (
           <CallView call={call} onSummaryRetried={reload} />
         ) : null}
@@ -65,7 +65,7 @@ function CallView({ call, onSummaryRetried }: { call: CallDetail; onSummaryRetri
       <h1 className="mt-6 text-2xl font-semibold">
         {others.length ? `Call with ${others.map((p) => p.name).join(", ")}` : "Call"}
       </h1>
-      <p className="mt-1 text-sm text-neutral-400">
+      <p className="mt-1 text-sm text-neutral-500">
         {formatDateTime(call.startedAt)} · {formatDuration(call.startedAt, call.endedAt)} ·{" "}
         {call.participants.map((p) => `${p.name}${p.isYou ? " (you)" : ""}: ${label(p.lang)}`).join(" · ")}
       </p>
@@ -75,20 +75,20 @@ function CallView({ call, onSummaryRetried }: { call: CallDetail; onSummaryRetri
       <section className="mt-8">
         <h2 className="text-lg font-semibold">Transcript</h2>
         {call.lines.length === 0 ? (
-          <p className="mt-2 text-neutral-400">Nothing was transcribed in this call.</p>
+          <p className="mt-2 text-neutral-500">Nothing was transcribed in this call.</p>
         ) : (
           <ol className="mt-3 space-y-3">
             {call.lines.map((line) => {
               const translated = line.targetLang && line.targetLang !== line.lang;
               return (
-                <li key={line.id} className="rounded-lg bg-neutral-900 px-4 py-3">
+                <li key={line.id} className="rounded-lg bg-neutral-50 px-4 py-3">
                   <p className="text-xs text-neutral-500">
                     <span className="font-mono">{formatOffset(line.spokenAt - start)}</span> ·{" "}
-                    <span className="font-medium text-neutral-300">{line.speakerName}</span> · {label(line.lang)}
+                    <span className="font-medium text-neutral-600">{line.speakerName}</span> · {label(line.lang)}
                   </p>
                   <p className="mt-1">{line.originalText}</p>
                   {translated && (
-                    <p className="mt-1 text-sm text-neutral-400">
+                    <p className="mt-1 text-sm text-neutral-500">
                       {label(line.targetLang)}: {line.translatedText}
                     </p>
                   )}
@@ -116,7 +116,7 @@ function SummaryCard({ call, defaultLang, onRetried }: { call: CallDetail; defau
   };
 
   return (
-    <section className="mt-6 rounded-xl border border-neutral-800 bg-neutral-900 p-4">
+    <section className="mt-6 rounded-xl border border-neutral-200 bg-neutral-50 p-4">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">AI summary</h2>
         {languages.length > 1 && (
@@ -129,7 +129,7 @@ function SummaryCard({ call, defaultLang, onRetried }: { call: CallDetail; defau
                 type="button"
                 onClick={() => setPicked(code)}
                 className={`rounded-md px-2 py-1 text-xs ${
-                  code === lang ? "bg-neutral-700 text-white" : "text-neutral-400 hover:text-white"
+                  code === lang ? "bg-neutral-200 text-neutral-950" : "text-neutral-500 hover:text-neutral-950"
                 }`}
               >
                 {label(code)}
@@ -140,20 +140,20 @@ function SummaryCard({ call, defaultLang, onRetried }: { call: CallDetail; defau
       </div>
 
       {call.summaryStatus === "ready" && call.summary ? (
-        <p className="mt-3 whitespace-pre-line leading-relaxed text-neutral-200">{call.summary[lang]}</p>
+        <p className="mt-3 whitespace-pre-line leading-relaxed text-neutral-700">{call.summary[lang]}</p>
       ) : call.summaryStatus === "pending" ? (
-        <p className="mt-3 text-neutral-400">{call.endedAt ? "Writing the summary…" : "The summary appears after the call ends."}</p>
+        <p className="mt-3 text-neutral-500">{call.endedAt ? "Writing the summary…" : "The summary appears after the call ends."}</p>
       ) : call.summaryStatus === "skipped" ? (
-        <p className="mt-3 text-neutral-400">{call.summaryError ?? "No summary for this call."}</p>
+        <p className="mt-3 text-neutral-500">{call.summaryError ?? "No summary for this call."}</p>
       ) : (
         <div className="mt-3">
-          <p className="text-amber-300">The summary couldn&apos;t be created.</p>
-          {call.summaryError && <p className="mt-1 text-sm text-neutral-400">{call.summaryError}</p>}
+          <p className="text-amber-700">The summary couldn&apos;t be created.</p>
+          {call.summaryError && <p className="mt-1 text-sm text-neutral-500">{call.summaryError}</p>}
           <button
             type="button"
             onClick={retry}
             disabled={retrying}
-            className="mt-3 rounded-lg bg-neutral-800 px-3 py-1.5 text-sm hover:bg-neutral-700 disabled:opacity-60"
+            className="mt-3 rounded-lg bg-neutral-100 px-3 py-1.5 text-sm hover:bg-neutral-200 disabled:opacity-60"
           >
             {retrying ? "Retrying…" : "Try again"}
           </button>

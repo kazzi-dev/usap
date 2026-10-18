@@ -90,12 +90,12 @@ function useDemo() {
   return { line, typed, done, index };
 }
 
-function Avatar({ name, hue, speaking }: { name: string; hue: string; speaking: boolean }) {
+function Avatar({ name, speaking }: { name: string; speaking: boolean }) {
   return (
     <div className="relative">
-      {speaking && <span className={`animate-pulse-ring absolute inset-0 rounded-full bg-gradient-to-br ${hue}`} />}
+      {speaking && <span className={`animate-pulse-ring absolute inset-0 rounded-full bg-hanko/30`} />}
       <div
-        className={`relative flex size-14 items-center justify-center rounded-full bg-gradient-to-br ${hue} text-lg font-semibold text-ink-950 shadow-lg sm:size-16`}
+        className={`relative flex size-14 items-center justify-center rounded-full bg-neutral-900 text-lg font-semibold text-white sm:size-16`}
       >
         {name[0]}
       </div>
@@ -109,7 +109,7 @@ function VoiceBars() {
       {[0, 1, 2, 3].map((i) => (
         <span
           key={i}
-          className="animate-wave h-full w-1 origin-bottom rounded-full bg-sky-300"
+          className="animate-wave h-full w-1 origin-bottom rounded-full bg-hanko"
           style={{ animationDelay: `${i * 120}ms` }}
         />
       ))}
@@ -128,10 +128,10 @@ export function SubtitleDemo({ compact = false }: { compact?: boolean }) {
   return (
     <figure
       aria-label="Example: subtitles translated live during a call"
-      className="relative overflow-hidden rounded-3xl border border-white/10 bg-ink-900/80 shadow-2xl shadow-sky-950/50 backdrop-blur"
+      className="relative overflow-hidden rounded-3xl border border-neutral-200 bg-white"
     >
       {/* Window bar */}
-      <div className="flex items-center justify-between border-b border-white/5 px-4 py-2.5 text-xs text-slate-400">
+      <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-2.5 text-xs text-neutral-500">
         <span className="flex items-center gap-1.5">
           <span className="size-2 rounded-full bg-emerald-400" /> Connected
         </span>
@@ -143,12 +143,12 @@ export function SubtitleDemo({ compact = false }: { compact?: boolean }) {
         {[line, partner].map((person, i) => (
           <div
             key={person.speaker}
-            className={`relative flex items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-ink-700 to-ink-800 ${
-              i === 0 ? "ring-2 ring-sky-400/60" : ""
+            className={`relative flex items-center justify-center overflow-hidden rounded-2xl bg-neutral-100 ${
+              i === 0 ? "ring-2 ring-neutral-900" : ""
             }`}
           >
-            <Avatar name={person.speaker} hue={person.hue} speaking={i === 0 && !done} />
-            <span className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md bg-black/40 px-1.5 py-0.5 text-[11px] text-slate-200">
+            <Avatar name={person.speaker} speaking={i === 0 && !done} />
+            <span className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md bg-white/90 px-1.5 py-0.5 text-[11px] text-neutral-700">
               {i === 0 && !done && <VoiceBars />}
               {person.speaker} · {person.speakerLang}
             </span>
@@ -158,21 +158,21 @@ export function SubtitleDemo({ compact = false }: { compact?: boolean }) {
 
       {/* Subtitles */}
       <figcaption className="space-y-2 px-4 pb-5" aria-live="off">
-        <p className="min-h-[1.75rem] text-sm text-slate-300">
-          <span className="mr-1.5 font-semibold text-slate-400">{line.speaker}:</span>
+        <p className="min-h-[1.75rem] text-sm text-neutral-700">
+          <span className="mr-1.5 font-semibold text-neutral-500">{line.speaker}:</span>
           {line.text.slice(0, typed)}
-          {!done && <span className="animate-caret ml-0.5 inline-block h-4 w-0.5 translate-y-0.5 bg-sky-300" />}
+          {!done && <span className="animate-caret ml-0.5 inline-block h-4 w-0.5 translate-y-0.5 bg-hanko" />}
         </p>
         <div
           key={index}
-          className={`rounded-xl border border-sky-400/20 bg-sky-400/10 px-3 py-2 transition-opacity duration-500 ${
+          className={`rounded-xl border border-hanko/30 bg-hanko/5 px-3 py-2 transition-opacity duration-500 ${
             done ? "opacity-100" : "opacity-0"
           }`}
         >
-          <p className="text-[11px] uppercase tracking-wider text-sky-300/80">
+          <p className="text-[11px] uppercase tracking-wider text-hanko">
             {line.listener} reads · {line.listenerLang}
           </p>
-          <p className={`mt-0.5 font-medium text-white ${compact ? "text-base" : "text-lg"}`}>{line.translated}</p>
+          <p className={`mt-0.5 font-medium text-neutral-950 ${compact ? "text-base" : "text-lg"}`}>{line.translated}</p>
         </div>
       </figcaption>
     </figure>
