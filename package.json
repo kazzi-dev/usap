@@ -33,5 +33,7 @@
   },
   "engines": {
     "node": ">=22"
-  }
+  },
+  "author": "Kazzi (Mark Nelson Gemina)",
+  "license": "MIT"
 }

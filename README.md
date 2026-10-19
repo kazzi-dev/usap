@@ -1,5 +1,7 @@
 # Usap
 
+*Designed and built by **Kazzi** (Mark Nelson Gemina): [github.com/kazzi-dev](https://github.com/kazzi-dev)*
+
 **Video calls where each person reads the other in their own language.**
 Two people join a call from a browser or the Android app. Each picks a
 language: English, Tagalog, Cebuano (Bisaya) or Japanese. While they talk,
@@ -431,3 +433,14 @@ curl -X POST http://127.0.0.1:8000/translate -H "Content-Type: application/json"
 | `npm run typecheck` | TypeScript checks for web + signal |
 | `npm run lint` | ESLint for the web app |
 | `npm run build` | Production build of web + signal |
+
+## Author
+
+Usap is my own project. I designed and built it end to end: the web app, the
+Android app, the signal server, the AI pipeline, and the deployment.
+
+**Kazzi** (Mark Nelson Gemina): [github.com/kazzi-dev](https://github.com/kazzi-dev)
+
+## License
+
+[MIT](LICENSE) © 2026 Kazzi (Mark Nelson Gemina)
