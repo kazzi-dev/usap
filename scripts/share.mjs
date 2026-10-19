@@ -202,7 +202,7 @@ const tunnel = useTailscale
   : run("tunnel", cloudflared, ["tunnel", "--no-autoupdate", "--url", `http://localhost:${PROXY_PORT}`]);
 let announced = false;
 const findUrl = (data) => {
-  const url = String(data).match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/)?.[0];
+  const url = String(data).match(/https:\/\/[a-z0-9.-]+\.(trycloudflare\.com|ts\.net)/)?.[0];
   if (!url || announced) return;
   announced = true;
   console.log(
