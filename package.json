@@ -24,7 +24,8 @@
     "test:signal": "npm test -w apps/signal",
     "test:web": "npm test -w apps/web",
     "test": "npm run test:signal && npm run test:web",
-    "deploy:api": "node scripts/deploy-hf.mjs"
+    "deploy:api": "node scripts/deploy-hf.mjs",
+    "share:fixed": "node scripts/share.mjs --tailscale"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

@@ -141,8 +141,18 @@ if (await portInUse(4000)) {
   say("both would open the same local database at the same time.");
   process.exit(1);
 }
-const cloudflared = findCloudflared();
-if (!cloudflared) {
+// --tailscale: a permanent https://<laptop>.<tailnet>.ts.net link (Tailscale
+// Funnel) instead of a new random trycloudflare.com link on every start.
+const useTailscale = process.argv.includes("--tailscale");
+const tailscale = ["tailscale", "C:\Program Files\Tailscale\tailscale.exe"].find(
+  (c) => spawnSync(c, ["version"], { stdio: "ignore" }).status === 0,
+);
+if (useTailscale && !tailscale) {
+  say("Tailscale is not installed. On Windows: winget install -e --id Tailscale.Tailscale, then sign in.");
+  process.exit(1);
+}
+const cloudflared = useTailscale ? null : findCloudflared();
+if (!useTailscale && !cloudflared) {
   say("cloudflared is not installed. On Windows: winget install -e --id Cloudflare.cloudflared");
   process.exit(1);
 }
@@ -186,8 +196,10 @@ await waitFor(`http://127.0.0.1:${WEB_PORT}/`, "website");
 await waitFor(`http://127.0.0.1:${PROXY_PORT}/health`, "proxy");
 say(`Local check: http://localhost:${PROXY_PORT}`);
 
-say("Opening the Cloudflare tunnel...");
-const tunnel = run("tunnel", cloudflared, ["tunnel", "--no-autoupdate", "--url", `http://localhost:${PROXY_PORT}`]);
+say(useTailscale ? "Opening the Tailscale Funnel..." : "Opening the Cloudflare tunnel...");
+const tunnel = useTailscale
+  ? run("tunnel", tailscale, ["funnel", String(PROXY_PORT)])
+  : run("tunnel", cloudflared, ["tunnel", "--no-autoupdate", "--url", `http://localhost:${PROXY_PORT}`]);
 let announced = false;
 const findUrl = (data) => {
   const url = String(data).match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/)?.[0];
