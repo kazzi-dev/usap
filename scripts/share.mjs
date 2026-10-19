@@ -144,7 +144,7 @@ if (await portInUse(4000)) {
 // --tailscale: a permanent https://<laptop>.<tailnet>.ts.net link (Tailscale
 // Funnel) instead of a new random trycloudflare.com link on every start.
 const useTailscale = process.argv.includes("--tailscale");
-const tailscale = ["tailscale", "C:\Program Files\Tailscale\tailscale.exe"].find(
+const tailscale = ["tailscale", "C:\\Program Files\\Tailscale\\tailscale.exe"].find(
   (c) => spawnSync(c, ["version"], { stdio: "ignore" }).status === 0,
 );
 if (useTailscale && !tailscale) {
