@@ -9,6 +9,33 @@ get a saved transcript and an AI summary.
 *Usap* means "to talk" in Filipino. It costs **$0** to run: WebRTC, Groq's
 free tier, open-source models running locally, and free hosting.
 
+## Why I built this
+
+My friends and I don't all share a first language. Some of us speak
+English, some Japanese, some Tagalog or Bisaya, and our group calls kept
+running into the same wall: someone would get lost, we'd stop to translate,
+and the conversation would lose its flow. Messenger, Instagram calls and
+Discord are great for talking, but none of them can show you what the other
+person is saying in *your* language while they're saying it.
+
+So I built Usap: a video call app where everyone speaks their own language
+and reads everyone else in theirs, as live subtitles. The goal is simple: to
+remove the language barrier between friends, so we can talk instead of
+translating.
+
+## Try it
+
+**Live demo:** https://laptop-ldfbt695.tail476b07.ts.net
+
+The live demo runs **on my own laptop**, shared through a Tailscale Funnel
+link, so it's only online while the laptop is on. I planned to host it on
+Oracle Cloud's Always Free tier, but Oracle's card verification kept failing
+for my card. Free hosts that skip card checks only offer about 512 MB of
+memory, which is too little for the translation model. The project is ready
+for a real server, though: [docs/DEPLOY.md](docs/DEPLOY.md) covers Vercel plus
+a Docker container, and moving there is a configuration change, not a
+rewrite.
+
 ## Highlights
 
 - **Real-time pipeline across 3 runtimes.** The browser detects speech (Silero
@@ -43,7 +70,7 @@ free tier, open-source models running locally, and free hosting.
 | Backend | Node 22, Express 5, Zod, Drizzle ORM, Postgres / PGlite |
 | AI | Python, FastAPI, Groq Whisper large-v3-turbo, faster-whisper, NLLB-200 (CTranslate2), Groq LLM |
 | Tests | node:test (rooms, auth, transcripts, helpers), pytest (rate limiter, translator), flutter test (VAD) |
-| Hosting | Vercel + Hugging Face Spaces (Docker) + Neon Postgres, no credit card ([deploy guide](docs/DEPLOY.md)) |
+| Hosting | Self-hosted on my laptop via Tailscale Funnel today; Docker + Vercel ready ([deploy guide](docs/DEPLOY.md)) |
 
 | Stage | What | Status |
 | ----- | ---- | ------ |
