@@ -27,7 +27,11 @@ translating.
 
 ## Try it
 
-**Live demo:** https://laptop-ldfbt695.tail476b07.ts.net
+**Live demo (web):** https://laptop-ldfbt695.tail476b07.ts.net
+
+**Android app:** [⬇ Download Usap.apk](https://github.com/kazzi-dev/usap/releases/latest/download/Usap.apk)
+(from the [Releases](https://github.com/kazzi-dev/usap/releases) page). On
+your phone, open the file and allow "Install unknown apps" when Android asks.
 
 The live demo runs **on my own laptop**, shared through a Tailscale Funnel
 link, so it's only online while the laptop is on. I planned to host it on

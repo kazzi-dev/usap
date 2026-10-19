@@ -172,7 +172,13 @@ export default function Home() {
 
       <footer className="border-t border-neutral-200">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-5 py-6 text-sm text-neutral-500 sm:flex-row">
-          <span>Usap · a portfolio project. Built with free tools only.</span>
+          <span>
+            Usap · Made by{" "}
+            <a href="https://github.com/kazzi-dev/usap" className="font-medium text-neutral-950 hover:text-hanko">
+              Kazzi
+            </a>{" "}
+            · © 2026 Kazzi, MIT License
+          </span>
           <button type="button" onClick={() => setReplayIntro(true)} className="hover:text-neutral-950">
             Replay the intro
           </button>

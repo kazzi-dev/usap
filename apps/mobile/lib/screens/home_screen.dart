@@ -238,6 +238,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
+              const SizedBox(height: 24),
+              Center(
+                child: Text('Made by Kazzi · © 2026 Kazzi, MIT License',
+                    style: TextStyle(fontSize: 12, color: UsapColors.muted)),
+              ),
             ],
           ),
         ),
