@@ -421,6 +421,7 @@ curl -X POST http://127.0.0.1:8000/translate -H "Content-Type: application/json"
 | `npm run setup:models` | Download + convert the NLLB translation model (one time) |
 | `npm run dev` | Signal (:4000) + web (:3000) + AI (:8000) over HTTP |
 | `npm run dev:https` | Same, over HTTPS for LAN/phone testing |
+| `npm run share` / `share:fixed` | Put the whole app online from this laptop (random Cloudflare link / permanent Tailscale link) |
 | `npm run db:up` / `db:down` | Start / stop Postgres in Docker |
 | `npm test` | All Node tests (signal + web) |
 | `npm run test:signal` | Backend tests (auth, recording rules, privacy) on in-memory Postgres |
