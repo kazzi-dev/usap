@@ -136,6 +136,14 @@ function startProxy() {
 
 // ---------- Main ----------
 
+// Already sharing? Stop here, BEFORE rebuilding: a rebuild under a running
+// website replaces its files and breaks its styles for everyone.
+if (await portInUse(PROXY_PORT)) {
+  say("Usap is already being shared (port 8800 is in use). Nothing to do.");
+  say("To restart it, press Ctrl+C in the window that is sharing, then run this again.");
+  process.exit(0);
+}
+
 if (await portInUse(4000)) {
   say("The dev signal server (port 4000) is running. Stop `npm run dev` first:");
   say("both would open the same local database at the same time.");
